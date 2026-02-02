@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="bn">
 <head>
@@ -1401,6 +1400,22 @@
             font-weight: 600;
             color: var(--light-blue);
         }
+        
+         /* Manual Due Form */
+        #add-manual-due-form-container {
+             margin-top: 20px;
+            padding: 20px;
+            background: #1a2435;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 1px 5px var(--shadow-light);
+        }
+        #add-manual-due-form-container h3 {
+            color: var(--text-light);
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+
 
         /* Print Styles */
         @media print {
@@ -1525,6 +1540,8 @@
                     <li id="nav-suppliers"><a href="#" data-section="suppliers"><i class="fas fa-truck"></i> সাপ্লায়ার</a></li>
                     <li id="nav-sales"><a href="#" data-section="sales"><i class="fas fa-chart-line"></i> বিক্রয় রিপোর্ট</a></li>
                     <li id="nav-dues"><a href="#" data-section="dues"><i class="fas fa-money-bill-wave"></i> কাস্টমার বাকি</a></li>
+                    <!-- New Menu Item for Manual Due Entry -->
+                    <li id="nav-manual-dues"><a href="#" data-section="manual-dues"><i class="fas fa-clipboard-list"></i> বাকি এন্ট্রি</a></li> 
                     <li id="nav-returns"><a href="#" data-section="returns"><i class="fas fa-undo-alt"></i> ফেরত পণ্য</a></li>
                     <li id="nav-ledger"><a href="#" data-section="ledger"><i class="fas fa-book"></i> লেজার</a></li>
                     <li id="nav-customer-data"><a href="#" data-section="customer-data"><i class="fas fa-address-book"></i> কাস্টমার ডেটা</a></li>
@@ -1958,6 +1975,36 @@
                         </tbody>
                 </table>
             </section>
+            
+            <!-- NEW: Manual Due Entry Section -->
+            <section id="manual-dues-section" class="app-section">
+                <h2><i class="fas fa-clipboard-list"></i> কাস্টমার বাকি এন্ট্রি (Manual Entry)</h2>
+                <div id="add-manual-due-form-container">
+                    <h3><i class="fas fa-user-plus"></i> নতুন বাকি যোগ করুন</h3>
+                    <form id="add-manual-due-form">
+                        <label for="manual-due-customer-phone">মোবাইল নম্বর:</label>
+                        <input type="text" id="manual-due-customer-phone" placeholder="ফোন নম্বর লিখুন (নতুন হলে কাস্টমার তৈরি হবে)" required>
+
+                        <label for="manual-due-customer-name">কাস্টমার নাম:</label>
+                        <input type="text" id="manual-due-customer-name" placeholder="নাম" required>
+                        
+                        <label for="manual-due-customer-address">ঠিকানা (ঐচ্ছিক):</label>
+                        <textarea id="manual-due-customer-address" rows="1" placeholder="ঠিকানা"></textarea>
+
+                        <label for="manual-due-amount">বাকি টাকার পরিমাণ (৳):</label>
+                        <input type="number" id="manual-due-amount" step="0.01" min="0" required>
+                        
+                        <label for="manual-due-date">তারিখ:</label>
+                        <input type="date" id="manual-due-date" required>
+
+                        <label for="manual-due-note">নোট (ঐচ্ছিক):</label>
+                        <textarea id="manual-due-note" rows="2" placeholder="কেন বাকি হলো বা অন্য কোনো নোট লিখুন"></textarea>
+
+                        <button type="submit" class="primary-btn"><i class="fas fa-save"></i> বাকি এন্ট্রি সংরক্ষণ করুন</button>
+                    </form>
+                    <p id="manual-due-message" class="error-message" style="margin-top: 15px;"></p>
+                </div>
+            </section>
 
             <section id="returns-section" class="app-section">
                 <h2><i class="fas fa-undo-alt"></i> ফেরত পণ্য ব্যবস্থাপনা</h2>
@@ -2318,7 +2365,6 @@
         <div class="modal-content">
             <span class="close-button">&times;</span>
             <h3>বাকি টাকা পরিশোধ করুন</h3>
-            <p>বিল আইডি: <span id="modal-due-bill-id"></span></p>
             <p>কাস্টমার: <span id="modal-due-customer-name"></span></p>
             <p>মোট বকেয়া: <span id="modal-due-total-outstanding"></span></p>
             <label for="payment-amount">পরিশোধের পরিমাণ (৳):</label>
@@ -2994,6 +3040,7 @@
                     'sales_income': 'বিক্রয় থেকে আয়',
                     'due_collection': 'বাকি টাকা কালেকশন',
                     'supplier_return_credit': 'সাপ্লায়ার ফেরত ক্রেডিট',
+                    'opening_due_entry': 'ম্যানুয়াল বাকি এন্ট্রি', // NEW: Manual Due Entry Category
                     // 'internet_bill_collection': 'ইন্টারনেট বিল কালেকশন', // DELETED (ধাপ ১.৩)
                     // 'service_bill_collection': 'সার্ভিস বিল কালেকশন', // DELETED (ধাপ ১.৩)
                     'others': 'অন্যান্য আয়'
@@ -3117,7 +3164,14 @@
 
 
                 if (settingsData) {
+                    // Merge loaded settings with default, ensuring the new category is preserved if loaded data doesn't have it
                     shopSettings = {...shopSettings, ...settingsData};
+                    
+                    // NEW: Ensure Manual Due category exists
+                    if(!shopSettings.ledgerCategories.income.opening_due_entry) {
+                         shopSettings.ledgerCategories.income.opening_due_entry = 'ম্যানুয়াল বাকি এন্ট্রি';
+                    }
+
                     // Ensure we remove the snConfig key if it exists in loaded data, as we no longer support it
                     if (shopSettings.snConfig) {
                         delete shopSettings.snConfig;
@@ -3212,6 +3266,7 @@
         const usersSection = document.getElementById('users-section');
         const settingsSection = document.getElementById('settings-section');
         const granularReportsSection = document.getElementById('granular-reports-section'); // NEW UI Section
+        const manualDuesSection = document.getElementById('manual-dues-section'); // NEW UI Section
 
         // Product Section Elements
         const addProductBtn = document.getElementById('add-product-btn');
@@ -3284,7 +3339,7 @@
         const duesListTableBody = document.querySelector('#dues-list-table tbody');
         const totalDuesAmountSpan = document.getElementById('total-dues-amount');
         const payDueModal = document.getElementById('pay-due-modal');
-        const modalDueBillId = document.getElementById('modal-due-bill-id');
+        // const modalDueBillId = document.getElementById('modal-due-bill-id'); // Removed from logic/UI
         const modalDueCustomerName = document.getElementById('modal-due-customer-name');
         const modalDueTotalOutstanding = document.getElementById('modal-due-total-outstanding');
         const paymentAmountInput = document.getElementById('payment-amount');
@@ -3293,6 +3348,16 @@
         const processDuePaymentBtn = document.getElementById('process-due-payment-btn');
         const paymentReceiptSection = document.getElementById('payment-receipt-section');
         const printPaymentReceiptBtn = document.getElementById('print-payment-receipt-btn');
+
+        // NEW Manual Due Elements
+        const addManualDueForm = document.getElementById('add-manual-due-form');
+        const manualDueCustomerPhone = document.getElementById('manual-due-customer-phone');
+        const manualDueCustomerName = document.getElementById('manual-due-customer-name');
+        const manualDueCustomerAddress = document.getElementById('manual-due-customer-address');
+        const manualDueAmount = document.getElementById('manual-due-amount');
+        const manualDueDate = document.getElementById('manual-due-date');
+        const manualDueNote = document.getElementById('manual-due-note');
+        const manualDueMessage = document.getElementById('manual-due-message');
 
 
         // Returns Section Elements
@@ -3429,7 +3494,7 @@
                 modal.style.display = 'none';
             });
             
-            if (currentEditingSale && sectionId !== 'pos') {
+            if (currentEditingSale && sectionId !== 'pos' && sectionId !== 'sales') { // Allow switching to sales for immediate check
                 if (confirm('আপনি বিক্রয় সম্পাদনা বাতিল করতে চান? কোনো পরিবর্তন সেভ হবে না।')) {
                     resetPOSPage();
                 } else {
@@ -3459,6 +3524,7 @@
                 'pos': 'বিক্রয় (POS)',
                 'sales': 'বিক্রয় রিপোর্ট',
                 'dues': 'কাস্টমার বাকি',
+                'manual-dues': 'ম্যানুয়াল বাকি এন্ট্রি', // NEW
                 'returns': 'ফেরত পণ্য',
                 'ledger': 'লেজার',
                 'customer-data': 'কাস্টমার ডেটা',
@@ -3498,6 +3564,15 @@
                 duesSearchInput.value = '';
                 // Modified function wrapper will execute the dues alert buttons
                 renderDuesList(); 
+            } else if (sectionId === 'manual-dues') { // NEW Manual Due Setup
+                const today = new Date().toISOString().split('T')[0];
+                manualDueDate.value = today;
+                manualDuesSection.querySelectorAll('input').forEach(i => i.value = '');
+                manualDuesSection.querySelector('textarea').value = '';
+                manualDueCustomerName.disabled = true;
+                manualDueCustomerAddress.disabled = true;
+                manualDueMessage.textContent = '';
+                
             } else if (sectionId === 'returns') {
                 returnDetailsContainer.style.display = 'none';
                 returnSaleSearchInput.value = '';
@@ -3651,6 +3726,7 @@
             document.getElementById('nav-suppliers').style.display = 'list-item';
             document.getElementById('nav-sales').style.display = 'list-item';
             document.getElementById('nav-dues').style.display = 'list-item';
+            document.getElementById('nav-manual-dues').style.display = 'list-item'; // NEW
             document.getElementById('nav-returns').style.display = 'list-item';
             document.getElementById('nav-ledger').style.display = 'list-item';
             document.getElementById('nav-customer-data').style.display = 'list-item';
@@ -3664,6 +3740,8 @@
             } else if (role === 'seller') {
                 document.getElementById('nav-users').style.display = 'none';
                 document.getElementById('add-product-btn').style.display = 'none';
+                 // Hide Manual Due Entry for sellers for safety
+                 document.getElementById('nav-manual-dues').style.display = 'none';
             }
             checkSubscription();
         }
@@ -4547,23 +4625,24 @@
             }
 
             const existingCartItem = currentCart.find(item => item.productId === product.id);
+            const requestedQuantity = existingCartItem ? existingCartItem.quantity + 1 : 1;
 
-            if (existingCartItem) {
-                if (product.stock > existingCartItem.quantity) {
+            if (product.stock >= requestedQuantity) {
+                 if (existingCartItem) {
                     existingCartItem.quantity++;
                 } else {
-                    alert(`স্টকে ${product.name}-এর পর্যাপ্ত নেই।`);
-                    return;
+                    currentCart.push({
+                        productId: product.id,
+                        name: product.name,
+                        quantity: 1,
+                        unitPrice: product.price,
+                        purchasePrice: product.purchasePrice || 0,
+                        unit: product.unit 
+                    });
                 }
             } else {
-                currentCart.push({
-                    productId: product.id,
-                    name: product.name,
-                    quantity: 1,
-                    unitPrice: product.price,
-                    purchasePrice: product.purchasePrice || 0,
-                    unit: product.unit 
-                });
+                alert(`স্টকে ${product.name}-এর পর্যাপ্ত নেই।`);
+                return;
             }
             renderCart();
             posProductSearch.value = '';
@@ -4590,14 +4669,31 @@
                 quantityInput.value = item.quantity;
                 quantityInput.min = '1';
                 quantityInput.style.width = '60px';
+                
+                // --- Updated Quantity Change Logic (Editable Invoice Enhancement) ---
                 quantityInput.addEventListener('change', (e) => {
                     const newQuantity = parseInt(e.target.value);
                     const product = products.find(p => p.id === item.productId);
-                    if (product && product.stock >= newQuantity) {
+                    if (newQuantity <= 0) {
+                        currentCart.splice(index, 1); // Remove item if quantity is zero
+                        renderCart();
+                        return;
+                    }
+
+                    // Check if new quantity exceeds stock AFTER considering current editing state's adjustment
+                    const availableStock = product.stock;
+                    let maxAllowed = availableStock;
+                    if (currentEditingSale) {
+                        const originalItem = currentEditingSale.items.find(i => i.productId === item.productId);
+                        // Add back the original quantity to stock to get the theoretical maximum.
+                        maxAllowed = availableStock + (originalItem ? originalItem.quantity : 0);
+                    }
+                    
+                    if (maxAllowed >= newQuantity) {
                         item.quantity = newQuantity;
                         updateCartTotal();
                     } else {
-                        alert(`স্টকে ${product.name}-এর পর্যাপ্ত নেই।`);
+                        alert(`স্টকে ${product.name}-এর পর্যাপ্ত নেই। সর্বোচ্চ ${maxAllowed}টি দেওয়া যেতে পারে।`);
                         e.target.value = item.quantity;
                     }
                 });
@@ -4798,7 +4894,7 @@
 
             const isEditing = completeSaleBtn.dataset.editing === 'true';
 
-            // Logic for UPDATING a sale
+            // Logic for UPDATING a sale (Editable Invoice Enhancement)
             if (isEditing && currentEditingSale) {
                 const saleIndex = sales.findIndex(s => s.id === currentEditingSale.id);
                 if(saleIndex === -1) {
@@ -4806,9 +4902,8 @@
                     resetPOSPage();
                     return;
                 }
-
-                const dbPromises = [];
-                // 1. Calculate new totals
+                
+                // --- Recalculate Financials ---
                 const newTotalAmount = currentCart.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
                 const newDiscountAmount = parseFloat(discountAmountInput.value) || 0;
                 const newFinalAmount = newTotalAmount - newDiscountAmount;
@@ -4816,96 +4911,124 @@
                  for (const item of currentCart) {
                     const product = products.find(p => p.id === item.productId);
                     if (!product) {
-                         alert(`দুঃখিত! ${item.name} পণ্যটি আর موجود নেই।`);
+                         alert(`দুঃখিত! ${item.name} পণ্যটি আর मौजूद নেই।`);
                         return;
                     }
-                    const itemProfit = (item.unitPrice - (product.purchasePrice || 0)) * item.quantity;
+                    const itemProfit = (item.unitPrice - (item.purchasePrice || 0)) * item.quantity;
                     newTotalProfit += itemProfit;
                 }
 
-                // 2. Calculate differences from original sale
+                // --- 1. Calculate Differences ---
                 const amountDifference = newFinalAmount - currentEditingSale.finalAmount;
                 const profitDifference = newTotalProfit - currentEditingSale.profit;
                 
-                // 3. Revert original stock & apply new stock changes
-                const stockUpdatePromises = [];
-                // Add back old quantities
+                const dbPromises = [];
+                
+                // --- 2. Stock Adjustment (Revert old, Apply new) ---
+                const productUpdates = {};
+
+                // Revert old quantities (Add back to stock)
                 currentEditingSale.items.forEach(item => {
-                    const productIndex = products.findIndex(p => p.id === item.productId);
-                    if(productIndex > -1) {
-                        products[productIndex].stock += item.quantity;
-                    }
+                     if (!productUpdates[item.productId]) productUpdates[item.productId] = products.find(p => p.id === item.productId);
+                     if (productUpdates[item.productId]) {
+                        productUpdates[item.productId].stock += item.quantity;
+                     }
                 });
-                // Subtract new quantities
+
+                // Subtract new quantities (Check stock and reduce)
                 for(const item of currentCart) {
-                    const productIndex = products.findIndex(p => p.id === item.productId);
-                    if(productIndex > -1) {
-                        if (products[productIndex].stock < item.quantity) {
-                             alert(`দুঃখিত! ${item.name} স্টকে পর্যাপ্ত নেই।`);
-                             // Revert the stock additions we just did
-                             currentEditingSale.items.forEach(it => {
-                                const pIdx = products.findIndex(p => p.id === it.productId);
-                                if(pIdx > -1) products[pIdx].stock -= it.quantity;
-                             });
-                             return;
+                     if (!productUpdates[item.productId]) productUpdates[item.productId] = products.find(p => p.id === item.productId);
+                     
+                     if(productUpdates[item.productId]) {
+                        const newStock = productUpdates[item.productId].stock - item.quantity;
+                        if (newStock < 0) {
+                             alert(`দুঃখিত! ${item.name} স্টকে পর্যাপ্ত নেই। (বাকি: ${productUpdates[item.productId].stock})`);
+                             // Revert local in-memory changes and exit
+                             return; 
                         }
-                        products[productIndex].stock -= item.quantity;
-                        stockUpdatePromises.push(db.put('products', products[productIndex]));
-                    }
-                }
-                dbPromises.push(...stockUpdatePromises);
-
-
-                // 4. Update financials (Customer, Dues, Ledger)
-                const customer = customers.find(c => c.id === currentEditingSale.customerId);
-                if(customer) {
-                    customer.totalPurchased += amountDifference;
-                }
-
-                if(currentEditingSale.status === 'বাকি') {
-                    const due = dues.find(d => d.saleId === currentEditingSale.saleId);
-                    if(due) {
-                        due.originalAmount += amountDifference;
-                        due.remainingAmount += amountDifference;
-                        dbPromises.push(db.put('dues', due));
-                    }
-                    if(customer) {
-                        customer.currentDue += amountDifference;
-                    }
-                } else {
-                     const ledgerEntry = ledgerEntries.find(l => l.saleId === currentEditingSale.saleId && l.category === 'sales_income');
-                     if(ledgerEntry) {
-                        ledgerEntry.amount += amountDifference;
-                        dbPromises.push(db.put('ledgerEntries', ledgerEntry));
+                        productUpdates[item.productId].stock = newStock;
+                     } else {
+                        alert(`পণ্য ${item.name} খুঁজে পাওয়া যায়নি।`);
+                        return;
                      }
                 }
-                if(customer) {
-                    dbPromises.push(db.put('customers', customer));
+                // Save all updated products
+                Object.values(productUpdates).forEach(p => dbPromises.push(db.put('products', p)));
+
+
+                // --- 3. Financial Adjustment (Customer, Dues, Ledger) ---
+                const customer = customers.find(c => c.id === currentEditingSale.customerId);
+                
+                if (Math.abs(amountDifference) > 0.01) {
+                    if(customer) {
+                        customer.totalPurchased += amountDifference; // Gross sales adjustment
+
+                        if(currentEditingSale.status === 'বাকি') {
+                            customer.currentDue += amountDifference; // Due adjustment
+                        } else if (currentEditingSale.status === 'সম্পূর্ণ') {
+                            customer.totalPaid += amountDifference; // Paid adjustment (only if total was fully paid)
+                        }
+                        dbPromises.push(db.put('customers', customer));
+                    }
+
+                    if(currentEditingSale.status === 'বাকি') {
+                        const due = dues.find(d => d.saleId === currentEditingSale.saleId);
+                        if(due) {
+                            due.originalAmount = newFinalAmount;
+                            due.remainingAmount += amountDifference;
+                            due.remainingAmount = Math.max(0, due.remainingAmount); // Ensure no negative due
+                            
+                            // If remaining due is now zero, remove from dues list and update sale status
+                            if (due.remainingAmount < 0.01) {
+                                sales[saleIndex].status = 'সম্পূর্ণ';
+                                dbPromises.push(db.delete('dues', due.id));
+                            } else {
+                                sales[saleIndex].status = 'বাকি';
+                                dbPromises.push(db.put('dues', due));
+                            }
+                        }
+                    } else { // Cash/Card/bKash (Completed Sale)
+                         const ledgerEntry = ledgerEntries.find(l => l.saleId === currentEditingSale.saleId && l.category === 'sales_income');
+                         if(ledgerEntry) {
+                            ledgerEntry.amount += amountDifference;
+                            dbPromises.push(db.put('ledgerEntries', ledgerEntry));
+                         }
+                    }
                 }
 
-                // 5. Update the sale object itself
-                sales[saleIndex].items = currentCart;
-                sales[saleIndex].totalAmount = newTotalAmount;
-                sales[saleIndex].discountAmount = newDiscountAmount;
-                sales[saleId].finalAmount = newFinalAmount;
-                sales[saleIndex].profit = newTotalProfit;
-                sales[saleIndex].timestamp = new Date().toISOString(); // Update timestamp to show modification time
+                // --- 4. Update the Sale Object ---
+                const oldTimestamp = sales[saleIndex].timestamp;
+                sales[saleIndex] = {
+                    ...sales[saleIndex],
+                    items: currentCart,
+                    totalAmount: newTotalAmount,
+                    discountAmount: newDiscountAmount,
+                    finalAmount: newFinalAmount,
+                    profit: newTotalProfit,
+                    timestamp: new Date().toISOString(), // Update timestamp to show modification time
+                    isRevised: true, // NEW flag for print function
+                };
 
                 dbPromises.push(db.put('sales', sales[saleIndex]));
                 
+                // Execute all database promises
                 await Promise.all(dbPromises);
                 
                 // Refresh all in-memory arrays and UI after put 
                 await initializeData();
 
-
                 alert('বিক্রয় সফলভাবে আপডেট হয়েছে!');
+                const saleJustCompletedId = sales[saleIndex].saleId;
                 resetPOSPage();
+                
+                // Show print button for revised invoice
+                printBillBtn.style.display = 'block';
+                printBillBtn.dataset.saleId = saleJustCompletedId;
                 showSection('sales');
                 return;
             }
 
-            // --- LOGIC FOR CREATING A NEW SALE --- //
+            // --- LOGIC FOR CREATING A NEW SALE (Original) --- //
             const saleId = generateUniqueId('S');
             const timestamp = new Date().toISOString();
             const sellerId = currentUser.id;
@@ -4919,14 +5042,23 @@
             const status = (paymentMethod === 'due') ? 'বাকি' : 'সম্পূর্ণ';
 
             let totalProfit = 0;
+            const productUpdatePromises = [];
+            
             for (const item of currentCart) {
                 const product = products.find(p => p.id === item.productId);
                 if (!product || product.stock < item.quantity) {
                     alert(`দুঃখিত! ${item.name} স্টকে পর্যাপ্ত নেই।`);
                     return;
                 }
-                const itemProfit = (item.unitPrice - (product.purchasePrice || 0)) * item.quantity;
+                const itemProfit = (item.unitPrice - (item.purchasePrice || 0)) * item.quantity;
                 totalProfit += itemProfit;
+                
+                // Update stock locally and prepare DB update
+                const productIndex = products.findIndex(p => p.id === item.productId);
+                if (productIndex !== -1) {
+                    products[productIndex].stock -= item.quantity;
+                    productUpdatePromises.push(db.put('products', products[productIndex]));
+                }
             }
 
             // Manage customer record
@@ -4955,15 +5087,6 @@
                 customerId = customer.id;
             }
             
-            const productUpdatePromises = currentCart.map(item => {
-                const productIndex = products.findIndex(p => p.id === item.productId);
-                if (productIndex !== -1) {
-                    products[productIndex].stock -= item.quantity;
-                    return db.put('products', products[productIndex]);
-                }
-                return Promise.resolve();
-            });
-
             const newSale = {
                 id: saleId,
                 saleId,
@@ -4980,7 +5103,8 @@
                 paymentMethod,
                 status,
                 type: 'sale',
-                items: currentCart
+                items: currentCart,
+                isRevised: false // New sale is never revised
             };
             
             sales.push(newSale);
@@ -5140,7 +5264,7 @@
          * @param {string} saleId 
          */
         function printBill(saleId) {
-            const sale = sales.find(s => s.saleId === saleId && s.type === 'sale');
+            const sale = sales.find(s => s.saleId === saleId && (s.type === 'sale' || s.type === 'return'));
             if (!sale) {
                 alert('Invoice not found.');
                 return;
@@ -5153,11 +5277,15 @@
             const sellerName = users.find(u => u.id === sale.sellerId)?.displayName || 'N/A';
             const customerNameDisplay = sale.customerName !== 'ক্যাশ কাস্টমার' ? sale.customerName : 'CASH CUSTOMER';
             const formattedDate = moment(sale.timestamp).format('DD-MMM-YY h:mm A');
-            const amountInWords = numberToEnglishWords(finalAmount) + ' Only';
+            const amountInWords = numberToEnglishWords(Math.abs(finalAmount)) + ' Only';
             
             const shopPhoneCell = shopSettings.phoneCell || '+88-031-XXXXXXX, Cell: 018XX-XXXXXX';
             const shopVatReg = shopSettings.vatReg || 'VAT Reg. No.: N/A';
             const logoHtml = shopSettings.logoUrl ? `<div class="center"><img src="${shopSettings.logoUrl}" alt="Logo" style="max-height: 80px; max-width: 200px; margin-bottom: 10px;"></div>` : '';
+
+            // Editable Invoice Enhancement: Check for revision
+            const isRevised = sale.isRevised === true;
+            const invoiceTitle = isRevised ? 'REVISED INVOICE' : (sale.type === 'sale' ? 'CASH MEMO' : 'RETURN MEMO');
 
 
             let itemsHtml = ``;
@@ -5187,7 +5315,7 @@
                     <p class="center" style="margin-top: 0; margin-bottom: 2px;">Tel: ${shopPhoneCell}</p>
                     <p class="center" style="margin-top: 0; margin-bottom: 10px;">${shopVatReg}</p>
                     <hr style="border-top: 1px solid #000;">
-                    <h3 class="center" style="font-size: 16px; margin: 10px 0;">CASH MEMO</h3>
+                    <h3 class="center" style="font-size: 16px; margin: 10px 0;">${invoiceTitle}</h3>
                     
                     <div style="display: flex; justify-content: space-between; flex-wrap: wrap;">
                          <div style="width: 48%; display: flex; flex-wrap: wrap;">
@@ -5229,7 +5357,7 @@
                         <p style="margin: 0; width: 60%;">In Words : ${amountInWords}</p>
                         <div style="width: 40%; text-align: right; padding-right: 5px; box-sizing: border-box;">
                              <p style="margin: 0;">Discount : ${discount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                             <p style="margin: 0; border-top: 2px double #000; font-weight: bold; padding-top: 3px;">Net Amount : ${finalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                             <p style="margin: 0; border-top: 2px double #000; font-weight: bold; padding-top: 3px;">Net Amount : ${Math.abs(finalAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                         </div>
                     </div>
 
@@ -5347,7 +5475,7 @@
                     row.classList.add('return-row');
                 }
 
-                row.insertCell(0).textContent = transaction.saleId;
+                row.insertCell(0).textContent = transaction.saleId + (transaction.isRevised ? ' (Rev)' : '');
                 row.insertCell(1).textContent = new Date(transaction.timestamp).toLocaleString();
                 row.insertCell(2).textContent = users.find(u => u.id === transaction.sellerId)?.displayName || users.find(u => u.id === transaction.sellerId)?.username || 'N/A';
                 row.insertCell(3).textContent = transaction.customerName;
@@ -5384,7 +5512,7 @@
                 printBtn.addEventListener('click', () => printBill(transaction.saleId));
                 actionCell.appendChild(printBtn);
 
-                if (currentUser && currentUser.role === 'admin' && !isReturn) {
+                if (currentUser && currentUser.role === 'admin' && !isReturn && transaction.status !== 'বাতিল') { // Allow edit for non-cancelled sale
                     const editBtn = document.createElement('button');
                     editBtn.textContent = 'সম্পাদনা';
                     editBtn.className = 'edit-btn';
@@ -5540,16 +5668,25 @@
 
         let currentDueForPayment = null;
 
+        // --- NEW/MODIFIED: openPayDueModal now targets the entire customer due ---
         function openPayDueModal(due) {
-            currentDueForPayment = due; // This now refers to the specific bill being clicked
-            const customer = customers.find(c => c.id === due.customerId);
-            const totalCustomerDue = customer ? customer.currentDue : due.remainingAmount;
+            // Find the customer object to get the total outstanding due
+            const customer = customers.find(c => c.id === due.customerId || c.phone === due.customerPhone); 
+            
+            if (!customer) {
+                alert('কাস্টমার ডেটা খুঁজে পাওয়া যায়নি।');
+                return;
+            }
 
-            modalDueBillId.textContent = due.description || due.saleId;
-            modalDueCustomerName.textContent = due.customerName;
+            currentDueForPayment = due; // This now refers to the specific bill being clicked
+            const totalCustomerDue = customer.currentDue;
+
+            // modalDueBillId.textContent = due.description || due.saleId; // Removed this from UI as we pay total due
+            modalDueCustomerName.textContent = customer.name;
             // Show the total due for the customer, not just the single bill
             modalDueTotalOutstanding.textContent = `৳ ${totalCustomerDue.toLocaleString()}`;
             paymentAmountInput.value = due.remainingAmount; // Pre-fill with the clicked bill's remaining amount
+            paymentAmountInput.max = totalCustomerDue; // Max amount is the total customer due
             paymentMethodDueSelect.value = 'cash';
             updateModalRemainingDue();
             paymentReceiptSection.style.display = 'none';
@@ -5571,8 +5708,10 @@
 
         function updateModalRemainingDue() {
             if (!currentDueForPayment) return;
-            const customer = customers.find(c => c.id === currentDueForPayment.customerId);
-             const totalCustomerDue = customer ? customer.currentDue : 0;
+            const customer = customers.find(c => c.id === currentDueForPayment.customerId || c.phone === currentDueForPayment.customerPhone);
+            if (!customer) return;
+            
+             const totalCustomerDue = customer.currentDue;
             const paidAmount = parseFloat(paymentAmountInput.value) || 0;
             const remaining = totalCustomerDue - paidAmount;
             modalDueRemaining.textContent = `৳ ${Math.max(0, remaining).toLocaleString()}`;
@@ -5642,11 +5781,13 @@
                 paidDuesInfo.push({ description: due.description, amount: amountToPay });
             }
             
-            // Update customer totals
+            // --- Customer Total Update (New/General Payment) ---
+            // If there's any remainingPaidAmount left, it's either an overpayment or was manually allocated to a due without a record (e.g. an opening due not in dues array)
+            // For simplicity and adherence to the ledger rule, the total paid amount is logged.
+            
             customer.totalPaid = (customer.totalPaid || 0) + paidAmount;
-            // Note: We update currentDue directly with the paidAmount and cap it at zero.
             customer.currentDue = (customer.currentDue || 0) - paidAmount;
-            if (customer.currentDue < 0) customer.currentDue = 0; // Prevent negative due
+            if (customer.currentDue < 0) customer.currentDue = 0; // The actual overpayment is tracked in ledger if needed.
             dbPromises.push(db.put('customers', customer));
 
             // Update or delete due records in DB
@@ -5889,7 +6030,7 @@
                     const productId = qtyInput.dataset.productId;
                     const productName = qtyInput.dataset.name;
                     const unitPrice = parseFloat(qtyInput.dataset.unitPrice);
-                    const purchasePrice = parseFloat(qtyInput.dataset.purchasePrice);
+                    const purchasePrice = parseFloat(qtyInput.dataset.purchase-price);
                     const returnType = typeSelect.value;
                     
                     if (returnType === 'refund') {
@@ -6147,7 +6288,7 @@
                     deleteBtn.className = 'danger-btn';
                     deleteBtn.addEventListener('click', () => deleteLedgerEntry(entry.id));
                     // Prevent deleting auto-generated ledger entries
-                    if (['sales_income', 'due_collection', 'customer_refund', 'product_purchase', 'supplier_payment'].includes(entry.category)) {
+                    if (['sales_income', 'due_collection', 'customer_refund', 'product_purchase', 'supplier_payment', 'opening_due_entry'].includes(entry.category)) {
                         deleteBtn.disabled = true;
                     }
                     actionCell.appendChild(deleteBtn);
@@ -6316,7 +6457,7 @@
                 return;
             }
             const entryToDelete = ledgerEntries.find(entry => entry.id === id);
-            if (['sales_income', 'due_collection', 'customer_refund', 'product_purchase', 'supplier_payment'].includes(entryToDelete.category)) {
+            if (['sales_income', 'due_collection', 'customer_refund', 'product_purchase', 'supplier_payment', 'opening_due_entry'].includes(entryToDelete.category)) {
                  alert('স্বয়ংক্রিয়ভাবে তৈরি লেনদেন মুছে ফেলা যাবে না।');
                  return;
             }
@@ -6577,6 +6718,110 @@
             }
         }
         
+        // --- NEW: Manual Due Entry Logic ---
+        manualDueCustomerPhone.addEventListener('input', () => {
+            const mobile = manualDueCustomerPhone.value.trim();
+            const existingCustomer = customers.find(c => c.phone === mobile);
+
+            if (existingCustomer) {
+                manualDueCustomerName.value = existingCustomer.name;
+                manualDueCustomerAddress.value = existingCustomer.address || '';
+                manualDueCustomerName.disabled = true;
+                manualDueCustomerAddress.disabled = true;
+            } else {
+                manualDueCustomerName.value = '';
+                manualDueCustomerAddress.value = '';
+                manualDueCustomerName.disabled = false;
+                manualDueCustomerAddress.disabled = false;
+            }
+            manualDueMessage.textContent = '';
+        });
+
+        addManualDueForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const phone = manualDueCustomerPhone.value.trim();
+            const name = manualDueCustomerName.value.trim();
+            const address = manualDueCustomerAddress.value.trim();
+            const amount = parseFloat(manualDueAmount.value);
+            const date = manualDueDate.value;
+            const note = manualDueNote.value.trim() || 'Manual Due Entry';
+
+            if (!phone || !name || isNaN(amount) || amount <= 0 || !date) {
+                showMessage(manualDueMessage, 'অনুগ্রহ করে বৈধ তথ্য দিন।', false);
+                return;
+            }
+
+            let customer = customers.find(c => c.phone === phone);
+            const dbPromises = [];
+
+            if (!customer) {
+                // Create new customer
+                customer = {
+                    id: generateUniqueId('C'),
+                    name: name,
+                    phone: phone,
+                    address: address,
+                    totalPurchased: 0,
+                    totalPaid: 0,
+                    currentDue: 0,
+                    type: 'সাধারণ',
+                    openingDue: 0 // Will be calculated below
+                };
+                customers.push(customer);
+                dbPromises.push(db.put('customers', customer));
+            }
+
+            // 1. Update Customer Totals
+            customer.totalPurchased = (customer.totalPurchased || 0) + amount;
+            customer.currentDue = (customer.currentDue || 0) + amount;
+            dbPromises.push(db.put('customers', customer));
+
+            // 2. Create a 'Due' record (This mimics a sale due for simple tracking)
+            const dueId = generateUniqueId('D');
+            const newDue = {
+                id: dueId,
+                dueId: dueId,
+                saleId: dueId, // Use dueId as saleId for tracking
+                customerId: customer.id,
+                customerName: customer.name,
+                customerPhone: customer.phone,
+                originalAmount: amount,
+                remainingAmount: amount,
+                paidAmount: 0,
+                dateIssued: new Date(date).toISOString(),
+                description: `${note} (Manual Due)`,
+                billType: 'manual_due', // Custom type
+                appliesToMonths: []
+            };
+            dues.push(newDue);
+            dbPromises.push(db.put('dues', newDue));
+            
+            // 3. Create Ledger Entry (Opening Due / Income)
+            const ledgerEntry = {
+                id: generateUniqueId('L'),
+                timestamp: new Date(date).toISOString(),
+                type: 'income',
+                category: 'opening_due_entry', // Custom Ledger Category
+                description: `ম্যানুয়াল বাকি: ${note}`,
+                amount: amount,
+                customerId: customer.id,
+                customerName: customer.name,
+                saleId: dueId,
+            };
+            ledgerEntries.push(ledgerEntry);
+            dbPromises.push(db.put('ledgerEntries', ledgerEntry));
+
+            await Promise.all(dbPromises);
+            await initializeData(); // Reload all to update UI and arrays
+
+            showMessage(manualDueMessage, `৳ ${amount.toLocaleString()} বাকি সফলভাবে যোগ করা হয়েছে!`, true);
+            addManualDueForm.reset();
+            manualDueDate.value = new Date().toISOString().split('T')[0];
+            manualDueCustomerName.disabled = false;
+            manualDueCustomerAddress.disabled = false;
+        });
+
         // --- Settings Utilities ---
         async function saveSettings(message) {
             await db.put('settings', shopSettings);
@@ -7665,6 +7910,8 @@
              // Set default granular dates
              granularReportFromDateInput.value = moment().startOf('month').format('YYYY-MM-DD');
              granularReportToDateInput.value = today;
+             // Set default manual due date
+             manualDueDate.value = today;
              
              // Ensure offline bar is visible if truly offline on load
              if (!navigator.onLine) {
