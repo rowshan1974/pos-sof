@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MY POS SOF</title>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;700&family=Poppins:wght+400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <!-- JsBarcode লাইব্রেরি যোগ করা হয়েছে -->
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
@@ -3171,6 +3171,13 @@
                     if(!shopSettings.ledgerCategories.income.opening_due_entry) {
                          shopSettings.ledgerCategories.income.opening_due_entry = 'ম্যানুয়াল বাকি এন্ট্রি';
                     }
+                     // NEW: Ensure Adjustment category exists (for admin edit)
+                    if(!shopSettings.ledgerCategories.income.manual_due_adjustment) {
+                         shopSettings.ledgerCategories.income.manual_due_adjustment = 'ম্যানুয়াল বাকি অ্যাডজাস্টমেন্ট (প্লাস)';
+                         // Expense counterpart is also needed for negative adjustments
+                         shopSettings.ledgerCategories.expense.manual_due_adjustment = 'ম্যানুয়াল বাকি অ্যাডজাস্টমেন্ট (মাইনাস)';
+                    }
+
 
                     // Ensure we remove the snConfig key if it exists in loaded data, as we no longer support it
                     if (shopSettings.snConfig) {
@@ -5787,7 +5794,9 @@
             
             customer.totalPaid = (customer.totalPaid || 0) + paidAmount;
             customer.currentDue = (customer.currentDue || 0) - paidAmount;
-            if (customer.currentDue < 0) customer.currentDue = 0; // The actual overpayment is tracked in ledger if needed.
+            // The remaining amount should not be negative in currentDue unless we allow advance payment.
+            // For now, if remainingPaidAmount > 0, it is an overpayment that reduces currentDue to 0.
+            if (customer.currentDue < 0) customer.currentDue = 0; 
             dbPromises.push(db.put('customers', customer));
 
             // Update or delete due records in DB
@@ -6030,7 +6039,7 @@
                     const productId = qtyInput.dataset.productId;
                     const productName = qtyInput.dataset.name;
                     const unitPrice = parseFloat(qtyInput.dataset.unitPrice);
-                    const purchasePrice = parseFloat(qtyInput.dataset.purchase-price);
+                    const purchasePrice = parseFloat(qtyInput.dataset['purchase-price']); // Correctly access the data attribute
                     const returnType = typeSelect.value;
                     
                     if (returnType === 'refund') {
@@ -6081,7 +6090,7 @@
                 discountAmount: 0,
                 finalAmount: -totalReturnedValue,
                 profit: -totalProfitDeduction,
-                paymentMethod: returnedItems[0].type === 'refund' ? 'cash_refund' : returnedItems[0].type === 'store_credit' ? 'store_credit_issued' : 'exchange_processed',
+                paymentMethod: returnedItems[0].type === 'refund' ? 'cash_refund' : returnedItems[0].type === 'store_credit_issued' ? 'store_credit' : 'exchange_processed',
                 status: 'ফেরত সম্পন্ন',
                 type: 'return',
                 items: returnedItems
@@ -6089,8 +6098,36 @@
             
             sales.push(returnTransaction);
             dbPromises.push(db.put('sales', returnTransaction));
+            
+            // Update customer totals
+            const customer = customers.find(c => c.id === currentReturnOriginalSale.customerId);
+            if (customer) {
+                customer.totalPurchased += returnTransaction.finalAmount; // totalAmount is negative
+                
+                // If the return was a refund, reduce totalPaid (or total due if sale was due)
+                 if (returnedItems[0].type === 'refund') {
+                     // Simple case: assume a refund decreases the total paid if the customer had paid before. 
+                     // This is simplified and might not reflect complex accounting.
+                     customer.totalPaid = Math.max(0, (customer.totalPaid || 0) - totalReturnedValue); 
+                 } else if (currentReturnOriginalSale.status === 'বাকি') {
+                     // If the original sale was due, the return can reduce the remaining due.
+                      const dueRecord = dues.find(d => d.saleId === currentReturnOriginalSale.saleId);
+                      if(dueRecord) {
+                          dueRecord.remainingAmount = Math.max(0, dueRecord.remainingAmount - totalReturnedValue);
+                          dueRecord.originalAmount = Math.max(0, dueRecord.originalAmount - totalReturnedValue); // Also reduce original amount
+                           if (dueRecord.remainingAmount < 0.01) {
+                               dbPromises.push(db.delete('dues', dueRecord.id));
+                           } else {
+                               dbPromises.push(db.put('dues', dueRecord));
+                           }
+                      }
+                      customer.currentDue = Math.max(0, (customer.currentDue || 0) - totalReturnedValue);
+                 }
+                dbPromises.push(db.put('customers', customer));
+            }
 
-            // *** NEW LOGIC: Add Ledger Entry for Cash Refund ***
+
+            // *** NEW LOGIC: Add Ledger Entry for Cash Refund (Expense) ***
             if (cashRefundAmount > 0) {
                 const refundLedgerEntry = {
                     id: generateUniqueId('L'),
@@ -6142,10 +6179,13 @@
 
             let itemsHtml = '';
             returnRecord.items.forEach(item => {
+                const reasonText = reasonMap[item.reason] || item.reason;
+                const typeText = typeMap[item.type] || item.type;
                 itemsHtml += `
                     <tr>
-                        <td>${item.name} <br> ${item.quantity} x ${item.unitPrice.toLocaleString()}</td>
-                        <td class="right">${(item.quantity * item.unitPrice).toLocaleString()}</td>
+                        <td>${item.name} <br> ${item.quantity} x ৳${item.unitPrice.toLocaleString()}</td>
+                        <td class="right">৳${(item.quantity * item.unitPrice).toLocaleString()}</td>
+                        <td>${reasonText}<br>${typeText}</td>
                     </tr>
                 `;
             });
@@ -6162,7 +6202,7 @@
                 <p>কাস্টমার: ${returnRecord.customerName}</p>
                 <hr>
                 <table>
-                     <thead><tr><th>বিবরণ</th><th class="right">মোট</th></tr></thead>
+                     <thead><tr><th>বিবরণ</th><th class="right">মোট</th><th>কারণ/ধরণ</th></tr></thead>
                      <tbody>${itemsHtml}</tbody>
                 </table>
                 <hr>
@@ -6211,6 +6251,11 @@
 
             if (newCategoryName && newCategoryName.trim() !== '') {
                 const newCategoryKey = newCategoryName.trim().toLowerCase().replace(/\s+/g, '_');
+                // Use custom categories only (no system keys)
+                if (['sales_income', 'due_collection', 'customer_refund', 'product_purchase', 'supplier_payment', 'opening_due_entry', 'manual_due_adjustment'].includes(newCategoryKey)) {
+                    alert('এই নামটি সিস্টেমের জন্য সংরক্ষিত।');
+                    return;
+                }
                 if (shopSettings.ledgerCategories[type][newCategoryKey]) {
                     alert('এই ক্যাটাগরিটি আগে থেকেই আছে।');
                     return;
@@ -6288,7 +6333,7 @@
                     deleteBtn.className = 'danger-btn';
                     deleteBtn.addEventListener('click', () => deleteLedgerEntry(entry.id));
                     // Prevent deleting auto-generated ledger entries
-                    if (['sales_income', 'due_collection', 'customer_refund', 'product_purchase', 'supplier_payment', 'opening_due_entry'].includes(entry.category)) {
+                    if (['sales_income', 'due_collection', 'customer_refund', 'product_purchase', 'supplier_payment', 'opening_due_entry', 'manual_due_adjustment'].includes(entry.category)) {
                         deleteBtn.disabled = true;
                     }
                     actionCell.appendChild(deleteBtn);
@@ -6322,6 +6367,12 @@
             }
             if (!date) {
                 alert('অনুগ্রহ করে একটি তারিখ নির্বাচন করুন।');
+                return;
+            }
+            
+            // Prevent manual adding of restricted categories
+            if (['sales_income', 'due_collection', 'customer_refund', 'product_purchase', 'supplier_payment', 'opening_due_entry', 'manual_due_adjustment'].includes(category)) {
+                alert('এই ক্যাটাগরিটি ম্যানুয়ালি যোগ করা যায় না।');
                 return;
             }
 
@@ -6457,7 +6508,8 @@
                 return;
             }
             const entryToDelete = ledgerEntries.find(entry => entry.id === id);
-            if (['sales_income', 'due_collection', 'customer_refund', 'product_purchase', 'supplier_payment', 'opening_due_entry'].includes(entryToDelete.category)) {
+            // Block deletion of system-generated entries
+            if (['sales_income', 'due_collection', 'customer_refund', 'product_purchase', 'supplier_payment', 'opening_due_entry', 'manual_due_adjustment'].includes(entryToDelete.category)) {
                  alert('স্বয়ংক্রিয়ভাবে তৈরি লেনদেন মুছে ফেলা যাবে না।');
                  return;
             }
@@ -6588,11 +6640,11 @@
                 if (transaction.type === 'sale') {
                     totalSales += transaction.finalAmount;
                     let itemsListHtml = transaction.items.map(item => `${item.name}(${item.quantity})`).join(', ');
-                    salesHistoryHtml += `<tr><td>${moment(transaction.timestamp).format('L')}</td><td>${transaction.saleId.slice(-6)}</td><td>${itemsListHtml}</td><td class="right">${transaction.finalAmount.toLocaleString()}</td></tr>`;
+                    salesHistoryHtml += `<tr><td>${moment(transaction.timestamp).format('L')}</td><td>${transaction.saleId.slice(-6)}</td><td>${itemsListHtml}</td><td class="right">৳${transaction.finalAmount.toLocaleString()}</td></tr>`;
                 } else if (transaction.type === 'return') {
                     totalSales += transaction.finalAmount; 
                     let itemsListHtml = transaction.items.map(item => `${item.name}(${item.quantity})`).join(', ');
-                    returnsHistoryHtml += `<tr><td>${moment(transaction.timestamp).format('L')}</td><td>${transaction.saleId.slice(-6)}</td><td>${itemsListHtml}</td><td class="right">${transaction.finalAmount.toLocaleString()}</td></tr>`;
+                    returnsHistoryHtml += `<tr><td>${moment(transaction.timestamp).format('L')}</td><td>${transaction.saleId.slice(-6)}</td><td>${itemsListHtml}</td><td class="right">৳${transaction.finalAmount.toLocaleString()}</td></tr>`;
                 }
             });
 
@@ -6645,12 +6697,122 @@
                 editBtn.className = 'edit-btn';
                 editBtn.addEventListener('click', () => editCustomer(customer.id));
                 actionCell.appendChild(editBtn);
+                
+                // ** NEW: Admin Due Adjustment Button **
+                if (currentUser && currentUser.role === 'admin') {
+                    const adjustDueBtn = document.createElement('button');
+                    adjustDueBtn.innerHTML = '<i class="fas fa-balance-scale"></i> বাকি অ্যাডজাস্ট';
+                    adjustDueBtn.className = 'warning-btn';
+                    adjustDueBtn.addEventListener('click', () => adjustCustomerDue(customer.id));
+                    actionCell.appendChild(adjustDueBtn);
+                }
 
                 if (currentUser && currentUser.role !== 'admin') {
                     editBtn.disabled = true;
                 }
             });
         }
+        
+        // ** NEW: Admin Due Adjustment Logic **
+        async function adjustCustomerDue(customerId) {
+            if (currentUser.role !== 'admin') {
+                alert('আপনার বাকি অ্যাডজাস্ট করার অনুমতি নেই।');
+                return;
+            }
+            const customer = customers.find(c => c.id === customerId);
+            if (!customer) return;
+
+            const currentDue = customer.currentDue || 0;
+            const newDueStr = prompt(`কাস্টমার: ${customer.name}\nবর্তমান বাকি: ৳ ${currentDue.toLocaleString()}\n\nনতুন বাকি টাকার পরিমাণ লিখুন:`);
+
+            if (newDueStr === null) return; // Cancelled
+            
+            const newDue = parseFloat(newDueStr);
+            if (isNaN(newDue) || newDue < 0) {
+                alert('অনুগ্রহ করে ০ বা তার বেশি একটি বৈধ সংখ্যা দিন।');
+                return;
+            }
+            
+            const difference = newDue - currentDue;
+            const adjustmentAmount = Math.abs(difference);
+
+            if (adjustmentAmount < 0.01) {
+                alert('বাকি টাকার কোনো পরিবর্তন হয়নি।');
+                return;
+            }
+
+            const adjustmentType = difference > 0 ? 'income' : 'expense';
+            const adjustmentCategory = 'manual_due_adjustment';
+            const adjustmentDescription = difference > 0 
+                ? `ম্যানুয়াল বাকি যোগ: ${customer.name}` 
+                : `ম্যানুয়াল বাকি হ্রাস: ${customer.name}`;
+            const actionText = difference > 0 ? 'যোগ' : 'হ্রাস';
+
+            if (!confirm(`আপনি কি নিশ্চিত? কাস্টমারের বাকি ৳ ${currentDue.toLocaleString()} থেকে ৳ ${newDue.toLocaleString()} তে পরিবর্তন হবে।\n\nলেজারে ৳ ${adjustmentAmount.toLocaleString()} ${actionText} হবে।`)) {
+                return;
+            }
+
+            // 1. Update Customer Totals
+            customer.currentDue = newDue;
+            customer.totalPurchased += difference; // Adjust totalPurchased to keep accounting balanced
+            await db.put('customers', customer);
+
+            // 2. Adjust Dues list (Clear all old dues and create a new consolidated due if newDue > 0)
+            const dbPromises = [];
+            
+            // Delete old remaining dues for this customer
+            dues.filter(d => d.customerId === customerId && d.remainingAmount > 0).forEach(d => {
+                dbPromises.push(db.delete('dues', d.id));
+            });
+            // Update local dues array
+            dues = dues.filter(d => d.customerId !== customerId || d.remainingAmount <= 0);
+
+            // Create new consolidated due record if there's remaining due
+            if (newDue > 0.01) {
+                const dueId = generateUniqueId('D');
+                 const newDueRecord = {
+                    id: dueId,
+                    dueId: dueId,
+                    saleId: dueId,
+                    customerId: customerId,
+                    customerName: customer.name,
+                    customerPhone: customer.phone,
+                    originalAmount: newDue,
+                    remainingAmount: newDue,
+                    paidAmount: 0,
+                    dateIssued: new Date().toISOString(),
+                    description: `ম্যানুয়াল অ্যাডজাস্টমেন্ট`,
+                    billType: 'manual_adjustment',
+                    appliesToMonths: [] 
+                };
+                dues.push(newDueRecord);
+                dbPromises.push(db.put('dues', newDueRecord));
+            }
+
+
+            // 3. Create Ledger Entry for Audit
+            const newLedgerEntry = {
+                id: generateUniqueId('L'),
+                timestamp: new Date().toISOString(),
+                type: adjustmentType,
+                category: adjustmentCategory,
+                description: adjustmentDescription,
+                amount: adjustmentAmount,
+                customerId: customerId,
+                customerName: customer.name,
+                saleId: 'ADJUST_' + generateUniqueId('L') // Unique ID for audit trail
+            };
+            ledgerEntries.push(newLedgerEntry);
+            dbPromises.push(db.put('ledgerEntries', newLedgerEntry));
+
+            await Promise.all(dbPromises);
+            
+            // Reload data and update UI
+            await initializeData();
+
+            alert('বাকি টাকা সফলভাবে অ্যাডজাস্ট করা হয়েছে!');
+        }
+
 
         addCustomerBtn.addEventListener('click', () => {
             addCustomerForm.reset();
@@ -6718,7 +6880,7 @@
             }
         }
         
-        // --- NEW: Manual Due Entry Logic ---
+        // --- NEW: Manual Due Entry Logic (MODIFIED for Ledger Rule) ---
         manualDueCustomerPhone.addEventListener('input', () => {
             const mobile = manualDueCustomerPhone.value.trim();
             const existingCustomer = customers.find(c => c.phone === mobile);
@@ -6766,7 +6928,7 @@
                     totalPaid: 0,
                     currentDue: 0,
                     type: 'সাধারণ',
-                    openingDue: 0 // Will be calculated below
+                    openingDue: 0 
                 };
                 customers.push(customer);
                 dbPromises.push(db.put('customers', customer));
@@ -6777,7 +6939,7 @@
             customer.currentDue = (customer.currentDue || 0) + amount;
             dbPromises.push(db.put('customers', customer));
 
-            // 2. Create a 'Due' record (This mimics a sale due for simple tracking)
+            // 2. Create a 'Due' record 
             const dueId = generateUniqueId('D');
             const newDue = {
                 id: dueId,
@@ -6797,20 +6959,10 @@
             dues.push(newDue);
             dbPromises.push(db.put('dues', newDue));
             
-            // 3. Create Ledger Entry (Opening Due / Income)
-            const ledgerEntry = {
-                id: generateUniqueId('L'),
-                timestamp: new Date(date).toISOString(),
-                type: 'income',
-                category: 'opening_due_entry', // Custom Ledger Category
-                description: `ম্যানুয়াল বাকি: ${note}`,
-                amount: amount,
-                customerId: customer.id,
-                customerName: customer.name,
-                saleId: dueId,
-            };
-            ledgerEntries.push(ledgerEntry);
-            dbPromises.push(db.put('ledgerEntries', ledgerEntry));
+            // 3. Ledger Entry: NO direct Ledger 'income' entry here. 
+            // The money hasn't been collected yet, it's just an outstanding receivable.
+            // Ledger entry happens only on Due Payment. (This is the change requested by user)
+            // The `totalPurchased` acts as the financial offset for tracking purposes.
 
             await Promise.all(dbPromises);
             await initializeData(); // Reload all to update UI and arrays
@@ -7248,13 +7400,19 @@
                     salesBody.innerHTML += `<tr><td>${moment(item.timestamp).format('L')}</td><td>${item.status === 'বাকি' ? 'বাকি' : 'নগদ'}</td><td>${detailsHtml}</td><td>৳ ${item.finalAmount.toLocaleString()}</td></tr>`;
                 });
             }
-
-            const customerPayments = ledgerEntries.filter(e => e.customerId === customerId && e.category.includes('_collection') && filterByDate(e));
+            
+            // Filter ledger for due_collection and manual_due_adjustment 
+            const customerPayments = ledgerEntries.filter(e => e.customerId === customerId && (e.category === 'due_collection' || e.category === 'manual_due_adjustment') && filterByDate(e));
              if(customerPayments.length > 0) {
                 paymentsBody.innerHTML = '';
                 customerPayments.forEach(item => {
-                    totalPayments += item.amount;
-                    paymentsBody.innerHTML += `<tr><td>${moment(item.timestamp).format('L')}</td><td>${item.description || 'পেমেন্ট'}</td><td>৳ ${item.amount.toLocaleString()}</td></tr>`;
+                    if (item.type === 'income') {
+                        totalPayments += item.amount;
+                        paymentsBody.innerHTML += `<tr><td>${moment(item.timestamp).format('L')}</td><td>${item.description || 'পেমেন্ট'}</td><td>৳ ${item.amount.toLocaleString()}</td></tr>`;
+                    } else if (item.type === 'expense') { // Negative Adjustment
+                        totalPayments -= item.amount; // Deduct from total payments for a cleaner view (optional: can be a separate table)
+                        paymentsBody.innerHTML += `<tr style="color: #dc3545;"><td>${moment(item.timestamp).format('L')}</td><td>${item.description || 'নেগেটিভ অ্যাডজাস্টমেন্ট'}</td><td>- ৳ ${item.amount.toLocaleString()}</td></tr>`;
+                    }
                 });
             }
 
