@@ -12,7 +12,6 @@
 
     <!-- ======================================================== -->
     <!-- 1, 5, 6: New Globals for Offline Sync and Forecast Systems -->
-    <!-- New Globals for Cash/Bank/Expense System -->
     <!-- ======================================================== -->
     <script>
         // No-storage mode: IndexedDB removed. All DB ops are no-ops.
@@ -20,12 +19,8 @@
         (function(){
             // --- EXISTING CODE ---
             if (typeof window.OBJECT_STORES === 'undefined') {
-                // ADD syncQueue, banks, bankTransactions, expenses to the list of stores
-                window.OBJECT_STORES = [
-                    'products', 'suppliers', 'customers', 'users', 'sales', 'dues', 'ledgerEntries', 
-                    'settings', 'purchaseHistory', 'supplierReturns', 'syncQueue', 
-                    'banks', 'bankTransactions', 'expenses' // NEW STORES
-                ]; 
+                // ADD syncQueue to the list of stores for offline queue management
+                window.OBJECT_STORES = ['products', 'suppliers', 'customers', 'users', 'sales', 'dues', 'ledgerEntries', 'settings', 'purchaseHistory', 'supplierReturns', 'syncQueue']; 
             }
             if (typeof window.db === 'undefined') {
                 window.db = {
@@ -334,22 +329,6 @@
          .stock-alert-card .low-stock-product-name {
             font-weight: 500;
             color: #fca5a5;
-        }
-        
-        /* --- NEW BANK/EXPENSE STYLES --- */
-        .summary-card.bank {
-            background: linear-gradient(135deg, #0d9488, #047876) !important; /* Teal for Bank */
-        }
-        .summary-card.expense-total {
-             background: linear-gradient(135deg, #dc2626, #b91c1c) !important; /* Red for Total Expense */
-        }
-        .transaction-credit {
-            color: #22c55e !important;
-            font-weight: bold;
-        }
-        .transaction-debit {
-            color: #ef4444 !important;
-            font-weight: bold;
         }
 
 
@@ -1564,9 +1543,7 @@
                     <!-- New Menu Item for Manual Due Entry -->
                     <li id="nav-manual-dues"><a href="#" data-section="manual-dues"><i class="fas fa-clipboard-list"></i> বাকি এন্ট্রি</a></li> 
                     <li id="nav-returns"><a href="#" data-section="returns"><i class="fas fa-undo-alt"></i> ফেরত পণ্য</a></li>
-                    <li id="nav-ledger"><a href="#" data-section="ledger"><i class="fas fa-book"></i> ক্যাশ লেজার</a></li> <!-- Updated text -->
-                    <li id="nav-banks"><a href="#" data-section="banks"><i class="fas fa-university"></i> ব্যাংক</a></li> <!-- NEW -->
-                    <li id="nav-expenses"><a href="#" data-section="expenses"><i class="fas fa-wallet"></i> খরচ</a></li> <!-- NEW -->
+                    <li id="nav-ledger"><a href="#" data-section="ledger"><i class="fas fa-book"></i> লেজার</a></li>
                     <li id="nav-customer-data"><a href="#" data-section="customer-data"><i class="fas fa-address-book"></i> কাস্টমার ডেটা</a></li>
                     <li id="nav-customer-management"><a href="#" data-section="customer-management"><i class="fas fa-users"></i> কাস্টমার</a></li>
                      <!-- 4. Sales & Profit Report System - Granular Reports Link -->
@@ -1609,20 +1586,20 @@
                         <h3>আজকের নিট বিক্রি</h3>
                         <p id="today-total-sales">৳ 0</p>
                     </div>
-                    <div class="summary-card bank">
-                        <i class="fas fa-university"></i>
-                        <h3>ব্যাংকে মোট ব্যালেন্স</h3>
-                        <p id="total-bank-balance">৳ 0</p> <!-- NEW -->
+                    <div class="summary-card">
+                        <i class="fas fa-boxes"></i>
+                        <h3>মোট স্টক আইটেম</h3>
+                        <p id="total-stock-items">0</p>
                     </div>
                     <div class="summary-card">
                         <i class="fas fa-coins"></i>
                         <h3>কাস্টমারের মোট বকেয়া</h3>
                         <p id="total-dues">৳ 0</p>
                     </div>
-                    <div class="summary-card expense-total">
-                        <i class="fas fa-money-bill-alt"></i>
-                        <h3>আজকের মোট খরচ</h3>
-                        <p id="today-total-expense">৳ 0</p> <!-- NEW -->
+                    <div class="summary-card" style="background: linear-gradient(135deg, #c82333, #dc3545);">
+                        <i class="fas fa-truck-loading"></i>
+                        <h3>সাপ্লায়ারের মোট বকেয়া</h3>
+                        <p id="total-supplier-dues">৳ 0</p>
                     </div>
                 </div>
 
@@ -1671,18 +1648,18 @@
                             <i class="fas fa-plus-circle"></i>
                             <h4>নতুন বিক্রি</h4>
                         </div>
-                        <div class="quick-action-card" onclick="showSection('expenses')">
-                            <i class="fas fa-wallet"></i>
-                            <h4>নতুন খরচ</h4>
+                        <div class="quick-action-card" onclick="showSection('products')">
+                            <i class="fas fa-box-open"></i>
+                            <h4>পণ্য যোগ করুন</h4>
                         </div>
                         <div class="quick-action-card">
                             <!-- 6. Alert System - Quick Action Trigger -->
                             <i class="fas fa-paper-plane"></i>
                             <h4><a href="#" style="color: inherit;" onclick="event.preventDefault(); window.promptForCustomerAlert();">কাস্টমারকে মেসেজ</a></h4> 
                         </div>
-                        <div class="quick-action-card" onclick="showSection('banks')">
-                            <i class="fas fa-university"></i>
-                            <h4>ব্যাংক ট্রানজেকশন</h4>
+                        <div class="quick-action-card" onclick="showSection('suppliers')">
+                            <i class="fas fa-user-plus"></i>
+                            <h4>সাপ্লায়ার</h4>
                         </div>
                     </div>
                 </div>
@@ -1750,14 +1727,9 @@
                         
                         <label for="product-purchase-type">ক্রয়ের ধরণ:</label>
                         <select id="product-purchase-type">
-                            <option value="cash">নগদ (ক্যাশ লেজার)</option>
-                            <option value="bank">ব্যাংক</option> <!-- NEW option -->
+                            <option value="cash">নগদ</option>
                             <option value="due">বাকি</option>
                         </select>
-                         <div id="product-purchase-bank-select-container" style="display:none;">
-                            <label for="product-purchase-bank-id">ব্যাংক নির্বাচন করুন:</label>
-                            <select id="product-purchase-bank-id"></select>
-                         </div>
                         
                         <hr style="margin: 20px 0;">
 
@@ -1867,25 +1839,12 @@
                 <form id="pos-payment-form">
                     <label for="payment-method">পেমেন্টের ধরণ:</label>
                     <select id="payment-method" required>
-                        <option value="cash">নগদ (Cash Ledger)</option>
-                        <option value="bank">ব্যাংক/কার্ড/মোবাইল</option> <!-- Consolidated option for non-cash -->
+                        <option value="cash">নগদ</option>
+                        <option value="card">কার্ড</option>
+                        <option value="bKash">বিকাশ</option>
+                        <option value="nagad">নগদ (মোবাইল)</option>
                         <option value="due">বাকিতে</option>
                     </select>
-                    
-                    <div id="bank-payment-fields" style="display:none;">
-                         <label for="pos-bank-id">ব্যাংক নির্বাচন করুন:</label>
-                         <select id="pos-bank-id" required>
-                             <option value="">-- ব্যাংক নির্বাচন করুন --</option>
-                         </select>
-                         <label for="pos-bank-type">পেমেন্টের প্রকারভেদ:</label>
-                         <select id="pos-bank-type" required>
-                            <option value="card">কার্ড</option>
-                            <option value="bKash">বিকাশ</option>
-                            <option value="nagad">নগদ (মোবাইল)</option>
-                            <option value="transfer">ব্যাংক ট্রান্সফার</option>
-                        </select>
-                    </div>
-
                     <button type="submit" id="complete-sale-btn" class="primary-btn"><i class="fas fa-check-circle"></i> বিক্রয় সম্পন্ন করুন</button>
                     <button type="button" id="cancel-sale-edit-btn" style="display:none;" class="cancel-btn"><i class="fas fa-times"></i> সম্পাদনা বাতিল করুন</button>
                     <button type="button" id="print-bill-btn" style="display:none;" class="primary-btn"><i class="fas fa-print"></i> বিল প্রিন্ট করুন</button>
@@ -1948,7 +1907,7 @@
             
             <!-- NEW: 4. Sales & Profit Report System - Granular Report Section -->
             <section id="granular-reports-section" class="app-section">
-                <h2><i class="fas fa-search-dollar"></i> উন্নত রিপোর্ট</h2>
+                <h2><i class="fas fa-search-dollar"></i> উন্নত রিপোর্ট (Profit Breakdown)</h2>
                  <div class="report-filters">
                     <div>
                         <label for="granular-report-from-date">থেকে তারিখ:</label>
@@ -1969,29 +1928,7 @@
                     <button id="filter-granular-report" class="primary-btn"><i class="fas fa-filter"></i> রিপোর্ট দেখুন</button>
                      <button id="print-granular-report-btn" class="info-btn"><i class="fas fa-print"></i> প্রিন্ট</button>
                 </div>
-                
-                <!-- NEW: Bank Report Table -->
-                <h3 style="margin-top: 30px;"><i class="fas fa-university"></i> ব্যাংক রিপোর্ট (Bank Transaction Summary)</h3>
-                <div id="bank-report-summary" style="padding: 15px; border-bottom: 2px solid #0d9488;">
-                     <p style="text-align: center;">রিপোর্ট তৈরি করতে উপরে ফিল্টার ব্যবহার করুন।</p>
-                </div>
-                 <table id="bank-report-table" style="margin-top: 15px;">
-                    <thead>
-                        <tr>
-                            <th>ব্যাংক</th>
-                            <th>গ্রুপ/মাস</th>
-                            <th>মোট ডিপোজিট (৳)</th>
-                            <th>মোট উইথড্রয়াল (৳)</th>
-                            <th>নেট ব্যালেন্স পরিবর্তন (৳)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                         <tr><td colspan="5">উপরে ফিল্টার করে রিপোর্ট দেখুন।</td></tr>
-                    </tbody>
-                </table>
 
-
-                <!-- Existing Sales/Profit Report Table -->
                 <div id="granular-report-output" style="margin-top: 20px;">
                     <h3>লাভ/ক্ষতি ও বিক্রয় বিভাজন (<span id="granular-report-title"></span>)</h3>
                     <div id="granular-report-summary" style="padding: 15px; border-bottom: 2px solid var(--primary-blue);">
@@ -2127,32 +2064,32 @@
             </section>
 
             <section id="ledger-section" class="app-section">
-                <h2><i class="fas fa-book"></i> ক্যাশ লেজার (Cash Book)</h2>
+                <h2><i class="fas fa-book"></i> লেজার</h2>
                 <div class="ledger-summary">
                     <div class="summary-card">
                         <i class="fas fa-dollar-sign"></i>
-                        <h3>মোট ক্যাশ ইন</h3>
-                        <p id="total-cash-in">৳ 0</p>
+                        <h3>মোট অন্যান্য আয়</h3>
+                        <p id="total-other-income">৳ 0</p>
                     </div>
                     <div class="summary-card expense">
                         <i class="fas fa-money-bill-alt"></i>
-                        <h3>মোট ক্যাশ আউট</h3>
-                        <p id="total-cash-out">৳ 0</p>
+                        <h3>মোট খরচ</h3>
+                        <p id="total-expenses">৳ 0</p>
                     </div>
                     <div class="summary-card" style="background: linear-gradient(135deg, #28a745, #218838);">
                         <i class="fas fa-balance-scale"></i>
-                        <h3>বর্তমান ক্যাশ ব্যালেন্স</h3>
-                        <p id="net-cash-balance">৳ 0</p>
+                        <h3>নিট লেজার ব্যালেন্স</h3>
+                        <p id="net-ledger-balance">৳ 0</p>
                     </div>
                 </div>
 
                 <div class="ledger-entry-form">
-                    <h3><i class="fas fa-plus-circle"></i> নতুন ক্যাশ লেনদেন যোগ করুন</h3>
+                    <h3><i class="fas fa-plus-circle"></i> নতুন লেনদেন যোগ করুন</h3>
                     <form id="add-ledger-entry-form">
                         <label for="ledger-type">লেনদেনের ধরণ:</label>
                         <select id="ledger-type" required>
-                            <option value="expense">খরচ (Cash Out)</option>
-                            <option value="income">আয় (Cash In)</option>
+                            <option value="expense">খরচ</option>
+                            <option value="income">অন্যান্য আয়</option>
                         </select>
                         <label for="ledger-category">ক্যাটাগরি:</label>
                         <select id="ledger-category" required></select>
@@ -2168,7 +2105,7 @@
                     </form>
                 </div>
 
-                <h3><i class="fas fa-history"></i> সকল ক্যাশ লেনদেন</h3>
+                <h3><i class="fas fa-history"></i> সকল লেনদেন</h3>
                 <div class="ledger-filters">
                     <div>
                         <label for="ledger-filter-from-date">থেকে তারিখ:</label>
@@ -2182,8 +2119,8 @@
                         <label for="ledger-filter-type">ধরণ অনুযায়ী:</label>
                         <select id="ledger-filter-type">
                             <option value="">সকল</option>
-                            <option value="expense">ক্যাশ আউট</option>
-                            <option value="income">ক্যাশ ইন</option>
+                            <option value="expense">খরচ</option>
+                            <option value="income">অন্যান্য আয়</option>
                         </select>
                     </div>
                     <div>
@@ -2210,207 +2147,6 @@
                         </tbody>
                 </table>
             </section>
-            
-            <!-- NEW: Bank Module Section -->
-            <section id="banks-section" class="app-section">
-                <h2><i class="fas fa-university"></i> ব্যাংক ব্যবস্থাপনা</h2>
-                
-                <div class="dashboard-summary">
-                    <div class="summary-card bank">
-                        <i class="fas fa-university"></i>
-                        <h3>মোট ব্যাংক ব্যালেন্স</h3>
-                        <p id="bank-section-total-balance">৳ 0</p>
-                    </div>
-                    <div class="summary-card" style="background: linear-gradient(135deg, #10b981, #059669);">
-                        <i class="fas fa-arrow-up"></i>
-                        <h3>মোট ডিপোজিট</h3>
-                        <p id="bank-section-total-credit">৳ 0</p>
-                    </div>
-                    <div class="summary-card" style="background: linear-gradient(135deg, #f97316, #ea580c);">
-                        <i class="fas fa-arrow-down"></i>
-                        <h3>মোট উইথড্রয়াল</h3>
-                        <p id="bank-section-total-debit">৳ 0</p>
-                    </div>
-                </div>
-
-                <h3><i class="fas fa-plus-circle"></i> ব্যাংক অ্যাকাউন্ট যোগ/সম্পাদনা</h3>
-                <button id="add-bank-btn" class="primary-btn"><i class="fas fa-plus"></i> নতুন ব্যাংক যোগ করুন</button>
-                <div id="add-bank-form-container" style="display:none;" class="ledger-entry-form">
-                    <form id="add-bank-form">
-                        <label for="bank-name">ব্যাংকের নাম:</label>
-                        <input type="text" id="bank-name" required>
-                        <label for="account-number">অ্যাকাউন্ট নম্বর:</label>
-                        <input type="text" id="account-number" required>
-                        <label for="opening-balance">প্রাথমিক ব্যালেন্স (৳):</label>
-                        <input type="number" id="opening-balance" step="0.01" value="0" min="0" required>
-                        <button type="submit" class="primary-btn"><i class="fas fa-save"></i> সংরক্ষণ করুন</button>
-                        <button type="button" class="cancel-btn" id="cancel-bank-entry"><i class="fas fa-times"></i> বাতিল</button>
-                    </form>
-                </div>
-
-                <h3><i class="fas fa-list-alt"></i> সকল ব্যাংক অ্যাকাউন্ট</h3>
-                <table id="bank-list-table">
-                    <thead>
-                        <tr>
-                            <th>ব্যাংকের নাম</th>
-                            <th>অ্যাকাউন্ট নম্বর</th>
-                            <th>বর্তমান ব্যালেন্স</th>
-                            <th>একশন</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    </tbody>
-                </table>
-                
-                <hr style="margin: 30px 0;">
-
-                <h3><i class="fas fa-exchange-alt"></i> ব্যাংক লেনদেনসমূহ</h3>
-                
-                <div class="report-filters">
-                    <div>
-                        <label for="bank-transaction-bank-filter">ব্যাংক অনুযায়ী:</label>
-                        <select id="bank-transaction-bank-filter">
-                            <option value="">সকল ব্যাংক</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="bank-transaction-type-filter">ধরণ অনুযায়ী:</label>
-                        <select id="bank-transaction-type-filter">
-                            <option value="">সকল ধরণ</option>
-                            <option value="credit">ডিপোজিট/ক্রেডিট</option>
-                            <option value="debit">উইথড্রয়াল/ডেবিট</option>
-                            <option value="transfer_in">লেজার ট্রান্সফার ইন</option>
-                            <option value="transfer_out">লেজার ট্রান্সফার আউট</option>
-                            <option value="expense_withdrawal">খরচের জন্য উইথড্রয়াল</option>
-                        </select>
-                    </div>
-                    <button id="filter-bank-transactions" class="primary-btn"><i class="fas fa-filter"></i> ফিল্টার</button>
-                    <button id="print-bank-transactions" class="info-btn"><i class="fas fa-print"></i> প্রিন্ট</button>
-                </div>
-
-                <table id="bank-transactions-table">
-                    <thead>
-                        <tr>
-                            <th>তারিখ</th>
-                            <th>ব্যাংক</th>
-                            <th>ধরণ</th>
-                            <th>বিবরণ/কাস্টমার</th>
-                            <th>টাকা</th>
-                            <th>একশন</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    </tbody>
-                </table>
-
-            </section>
-            
-            <!-- NEW: Expense Module Section -->
-            <section id="expenses-section" class="app-section">
-                <h2><i class="fas fa-wallet"></i> খরচ ব্যবস্থাপনা</h2>
-                 <div class="ledger-summary">
-                    <div class="summary-card expense">
-                        <i class="fas fa-money-bill-alt"></i>
-                        <h3>মোট খরচ (নির্বাচিত)</h3>
-                        <p id="total-filtered-expenses">৳ 0</p>
-                    </div>
-                     <div class="summary-card" style="background: linear-gradient(135deg, #1e3a8a, #1d4ed8);">
-                        <i class="fas fa-university"></i>
-                        <h3>ব্যাংক উইথড্রয়াল খরচ</h3>
-                        <p id="total-bank-withdrawal-expense">৳ 0</p>
-                    </div>
-                     <div class="summary-card" style="background: linear-gradient(135deg, #059669, #10b981);">
-                        <i class="fas fa-coins"></i>
-                        <h3>ক্যাশ খরচ</h3>
-                        <p id="total-cash-expense">৳ 0</p>
-                    </div>
-                </div>
-
-                <h3><i class="fas fa-plus-circle"></i> নতুন খরচ যোগ করুন</h3>
-                <div id="add-expense-form-container" class="ledger-entry-form">
-                    <form id="add-expense-form">
-                        <label for="expense-category">ক্যাটাগরি:</label>
-                        <select id="expense-category" required></select>
-                        <button type="button" id="add-expense-category-btn" class="primary-btn" style="margin-left: 10px; padding: 5px 10px; font-size: 12px;">ক্যাটাগরি যোগ করুন</button>
-                        
-                        <label for="expense-source">পেমেন্টের উৎস:</label>
-                        <select id="expense-source" required>
-                             <option value="cash">নগদ (Cash Ledger)</option>
-                             <option value="bank_withdrawal">ব্যাংক উইথড্রয়াল</option>
-                             <option value="other_bank">অন্যান্য ব্যাংক পেমেন্ট</option>
-                        </select>
-                        
-                        <div id="expense-bank-fields" style="display:none;">
-                            <label for="expense-bank-id">ব্যাংক নির্বাচন করুন:</label>
-                            <select id="expense-bank-id"></select>
-                            <p style="color: #f59e0b; font-size: 14px; margin-top: -15px;">*ব্যাংক উইথড্রয়াল/পেমেন্ট হলে ব্যাংকের ব্যালেন্স কমে যাবে।</p>
-                        </div>
-                        
-                        <label for="expense-amount">পরিমাণ (৳):</label>
-                        <input type="number" id="expense-amount" step="0.01" min="0" required>
-                        <label for="expense-date">তারিখ:</label>
-                        <input type="date" id="expense-date" required>
-                        <label for="expense-note">নোট:</label>
-                        <textarea id="expense-note" rows="2" placeholder="খরচের বিবরণ"></textarea>
-
-                        <button type="submit" class="primary-btn"><i class="fas fa-plus"></i> যোগ করুন</button>
-                    </form>
-                </div>
-
-                <h3><i class="fas fa-history"></i> সকল খরচ</h3>
-                 <div class="ledger-filters">
-                    <div>
-                        <label for="expense-filter-from-date">থেকে তারিখ:</label>
-                        <input type="date" id="expense-filter-from-date">
-                    </div>
-                    <div>
-                        <label for="expense-filter-to-date">পর্যন্ত তারিখ:</label>
-                        <input type="date" id="expense-filter-to-date">
-                    </div>
-                    <div>
-                        <label for="expense-filter-category">ক্যাটাগরি অনুযায়ী:</label>
-                        <select id="expense-filter-category">
-                            <option value="">সকল</option>
-                        </select>
-                    </div>
-                    <button id="filter-expenses" class="primary-btn"><i class="fas fa-filter"></i> ফিল্টার</button>
-                    <button id="print-expenses" class="info-btn"><i class="fas fa-print"></i> প্রিন্ট</button>
-                </div>
-                 <table id="expenses-table">
-                    <thead>
-                        <tr>
-                            <th>তারিখ</th>
-                            <th>ক্যাটাগরি</th>
-                            <th>উৎস</th>
-                            <th>বিবরণ</th>
-                            <th>পরিমাণ</th>
-                            <th>একশন</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    </tbody>
-                </table>
-                
-                <hr style="margin: 30px 0;">
-                
-                <h3><i class="fas fa-exchange-alt"></i> ব্যাংক থেকে ক্যাশ ট্রান্সফার (Cash In)</h3>
-                 <div id="bank-to-ledger-transfer-form-container" class="ledger-entry-form">
-                    <p style="color: #d1d5db;">ব্যাংক থেকে হাতে টাকা (ক্যাশে) আনুন, যা ক্যাশ লেজারে যোগ হবে এবং কোনো খরচ হিসেবে ধরা হবে না।</p>
-                    <form id="bank-to-ledger-transfer-form">
-                        <label for="transfer-bank-id">ব্যাংক নির্বাচন করুন:</label>
-                        <select id="transfer-bank-id" required></select>
-                        <label for="transfer-amount">পরিমাণ (৳):</label>
-                        <input type="number" id="transfer-amount" step="0.01" min="0" required>
-                        <label for="transfer-date">তারিখ:</label>
-                        <input type="date" id="transfer-date" required>
-                        <label for="transfer-note">নোট:</label>
-                        <textarea id="transfer-note" rows="2" placeholder="কেন ক্যাশে আনা হলো"></textarea>
-                        <button type="submit" class="warning-btn"><i class="fas fa-arrow-down"></i> ক্যাশে ট্রান্সফার করুন</button>
-                    </form>
-                </div>
-
-            </section>
-
 
             <section id="customer-data-section" class="app-section">
                 <h2><i class="fas fa-address-book"></i> কাস্টমার ডেটা</h2>
@@ -2502,10 +2238,6 @@
                         <button type="submit" class="primary-btn"><i class="fas fa-save"></i> সংরক্ষণ করুন</button>
                         <button type="button" class="cancel-btn"><i class="fas fa-times"></i> বাতিল করুন</button>
                     </form>
-                </div>
-                 <!-- NEW: Customer Search Bar -->
-                <div class="product-filters" style="margin-bottom: 20px;">
-                    <input type="text" id="customer-management-search" placeholder="কাস্টমারের নাম বা ফোন নম্বর দিয়ে খুঁজুন...">
                 </div>
                 <h3><i class="fas fa-list"></i> সকল কাস্টমার</h3>
                 <table id="customer-list-table">
@@ -2635,29 +2367,15 @@
             <h3>বাকি টাকা পরিশোধ করুন</h3>
             <p>কাস্টমার: <span id="modal-due-customer-name"></span></p>
             <p>মোট বকেয়া: <span id="modal-due-total-outstanding"></span></p>
-            
-            <label for="payment-method-due">পেমেন্টের ধরণ:</label>
-            <select id="payment-method-due" required>
-                <option value="cash">নগদ (Cash Ledger)</option>
-                <option value="bank">ব্যাংক/কার্ড/মোবাইল</option>
-            </select>
-            
-            <div id="due-payment-bank-fields" style="display:none;">
-                 <label for="due-payment-bank-id">ব্যাংক নির্বাচন করুন:</label>
-                 <select id="due-payment-bank-id" required>
-                     <option value="">-- ব্যাংক নির্বাচন করুন --</option>
-                 </select>
-                 <label for="due-payment-bank-type">পেমেন্টের প্রকারভেদ:</label>
-                 <select id="due-payment-bank-type" required>
-                    <option value="card">কার্ড</option>
-                    <option value="bKash">বিকাশ</option>
-                    <option value="nagad">নগদ (মোবাইল)</option>
-                    <option value="transfer">ব্যাংক ট্রান্সফার</option>
-                </select>
-            </div>
-            
             <label for="payment-amount">পরিশোধের পরিমাণ (৳):</label>
             <input type="number" id="payment-amount" step="0.01" min="0" required>
+            <label for="payment-method-due">পেমেন্টের ধরণ:</label>
+            <select id="payment-method-due" required>
+                <option value="cash">নগদ</option>
+                <option value="card">কার্ড</option>
+                <option value="bKash">বিকাশ</option>
+                <option value="nagad">নগদ (মোবাইল)</option>
+            </select>
             <p>বাকি থাকবে: <span id="modal-due-remaining">৳ 0</span></p>
             <button id="process-due-payment-btn" class="primary-btn"><i class="fas fa-check-circle"></i> জমা দিন</button>
             <button type="button" class="cancel-btn close-button"><i class="fas fa-times"></i> বাতিল</button>
@@ -2675,23 +2393,14 @@
             <h3>সাপ্লায়ারের বকেয়া পরিশোধ করুন</h3>
             <p>সাপ্লায়ার: <span id="modal-supplier-name"></span></p>
             <p>মোট বকেয়া: <span id="modal-supplier-total-outstanding"></span></p>
-            
-             <label for="supplier-payment-method">পেমেন্টের ধরণ:</label>
-            <select id="supplier-payment-method" required>
-                <option value="cash">নগদ (Cash Ledger)</option>
-                <option value="bank">ব্যাংক</option>
-            </select>
-            
-            <div id="supplier-payment-bank-fields" style="display:none;">
-                <label for="supplier-payment-bank-id">ব্যাংক নির্বাচন করুন:</label>
-                <select id="supplier-payment-bank-id" required>
-                    <option value="">-- ব্যাংক নির্বাচন করুন --</option>
-                </select>
-            </div>
-            
             <label for="supplier-payment-amount">পরিশোধের পরিমাণ (৳):</label>
             <input type="number" id="supplier-payment-amount" step="0.01" min="0" required>
-           
+            <label for="supplier-payment-method">পেমেন্টের ধরণ:</label>
+            <select id="supplier-payment-method" required>
+                <option value="cash">নগদ</option>
+                <option value="card">কার্ড</option>
+                <option value="bKash">বিকাশ</option>
+            </select>
             <p>বাকি থাকবে: <span id="modal-supplier-due-remaining">৳ 0</span></p>
             <button id="process-supplier-due-payment-btn" class="primary-btn"><i class="fas fa-check-circle"></i> জমা দিন</button>
         </div>
@@ -2722,9 +2431,9 @@
 
             <div class="ledger-table-container" id="supplier-ledger-print-area">
                 <!-- Cash Purchases Table -->
-                <h4>নগদ ক্রয় (ক্যাশ/ব্যাংক) <span class="table-total" id="total-cash-bank-purchase"></span></h4> <!-- Updated name for Bank Rule -->
-                <table id="supplier-cash-bank-purchase-table">
-                    <thead><tr><th>তারিখ</th><th>ধরণ</th><th>বিস্তারিত</th><th>টাকা</th></tr></thead> <!-- Added type -->
+                <h4>নগদ ক্রয় <span class="table-total" id="total-cash-purchase"></span></h4>
+                <table id="supplier-cash-purchase-table">
+                    <thead><tr><th>তারিখ</th><th>বিস্তারিত</th><th>টাকা</th></tr></thead>
                     <tbody></tbody>
                 </table>
                 <!-- Due Purchases Table -->
@@ -2736,7 +2445,7 @@
                 <!-- Payments Table -->
                 <h4>বকেয়া পরিশোধ <span class="table-total" id="total-supplier-payment"></span></h4>
                 <table id="supplier-payment-table">
-                     <thead><tr><th>তারিখ</th><th>ধরণ</th><th>বিস্তারিত</th><th>টাকা</th></tr></thead> <!-- Added type -->
+                     <thead><tr><th>তারিখ</th><th>বিস্তারিত</th><th>টাকা</th></tr></thead>
                     <tbody></tbody>
                 </table>
                 <!-- Returns Table -->
@@ -2784,7 +2493,7 @@
                 <!-- Payments Received Table -->
                 <h4>বকেয়া পরিশোধ প্রাপ্তি <span class="table-total" id="total-customer-payment"></span></h4>
                 <table id="customer-payment-table">
-                    <thead><tr><th>তারিখ</th><th>মাধ্যম</th><th>বিস্তারিত</th><th>টাকা</th></tr></thead> <!-- Added medium -->
+                    <thead><tr><th>তারিখ</th><th>বিস্তারিত</th><th>টাকা</th></tr></thead>
                     <tbody></tbody>
                 </table>
                 <!-- Returns Table -->
@@ -2886,7 +2595,6 @@
 
     <!-- ================================================================================= -->
     <!-- ======================= START OF ALL NEW ADD-ON MODULES ========================= -->
-    <!-- (Including the new Cash/Bank/Expense System) -->
     <!-- ================================================================================= -->
 
 
@@ -2913,17 +2621,16 @@
         }
 
         class DB {
-            // New version: Auto creates syncQueue, banks, bankTransactions, expenses on upgrade if missing.
+            // New version: Auto creates syncQueue on upgrade if missing.
             constructor(dbName, version, upgradeCallback) {
                 this.dbName = dbName;
                 this.version = version;
                 this.upgradeCallback = upgradeCallback;
                 this.db = null;
-                // Add all new stores to the global list for easy iteration if not already present (safety)
-                if (!window.OBJECT_STORES.includes('syncQueue')) window.OBJECT_STORES.push('syncQueue');
-                if (!window.OBJECT_STORES.includes('banks')) window.OBJECT_STORES.push('banks');
-                if (!window.OBJECT_STORES.includes('bankTransactions')) window.OBJECT_STORES.push('bankTransactions');
-                if (!window.OBJECT_STORES.includes('expenses')) window.OBJECT_STORES.push('expenses');
+                // Add syncQueue to the global list of stores for easy iteration
+                if (!window.OBJECT_STORES.includes('syncQueue')) {
+                    window.OBJECT_STORES.push('syncQueue');
+                }
             }
 
             async open() {
@@ -2938,24 +2645,9 @@
                          console.log('Creating store: syncQueue');
                         dbInstance.createObjectStore('syncQueue', { keyPath: 'id', autoIncrement: true });
                     }
-                    
-                    // NEW STORES for Cash/Bank/Expense Separation
-                    if (!dbInstance.objectStoreNames.contains('banks')) {
-                        console.log('Creating store: banks');
-                        dbInstance.createObjectStore('banks', { keyPath: 'id', autoIncrement: false });
-                    }
-                    if (!dbInstance.objectStoreNames.contains('bankTransactions')) {
-                        console.log('Creating store: bankTransactions');
-                        dbInstance.createObjectStore('bankTransactions', { keyPath: 'id', autoIncrement: false });
-                    }
-                    if (!dbInstance.objectStoreNames.contains('expenses')) {
-                        console.log('Creating store: expenses');
-                        dbInstance.createObjectStore('expenses', { keyPath: 'id', autoIncrement: false });
-                    }
-                    // End NEW STORES
 
                     // Existing logic for other stores
-                    window.OBJECT_STORES.filter(s => s !== 'syncQueue' && s !== 'banks' && s !== 'bankTransactions' && s !== 'expenses').forEach(storeName => {
+                    window.OBJECT_STORES.filter(s => s !== 'syncQueue').forEach(storeName => {
                          if (!dbInstance.objectStoreNames.contains(storeName)) {
                             console.log('Creating store:', storeName);
                             if (storeName === 'settings') {
@@ -3153,6 +2845,13 @@
                  await this.fallbackDb.add('syncQueue', newQueueItem);
                  
                  // Also immediately write to local IndexedDB (cache layer) 
+                 // Note: FirebaseDB uses firestore to write but here we want to use the local DB as cache. 
+                 // The assumption is: `this.onlineDb` here (which is `_actualStorageDB` a.k.a `FirebaseDB`) should fallback
+                 // to writing to the cache or the sync logic needs to handle this cache update itself.
+                 // Simplest: The original CRUD in main JS logic fetches/uses global data arrays, so if the Firebase put fails, 
+                 // the JS data arrays (`products`, `sales`, etc.) won't update.
+                 // We will rely on `initializeData` being called often to reload from IndexedDB, making `db.put` redundant for local caching itself.
+                 
                  // RE-STRATEGY: Use fallbackDB for the immediate "local storage" of the main data store *and* queue. 
                  await this.fallbackDb[method].bind(this.fallbackDb)(storeName, valueOrKey);
                  
@@ -3260,7 +2959,7 @@
         }
         
         const DB_NAME = 'fashionFlowDB';
-        const DB_VERSION = 6; // Updated version for the new 'banks', 'bankTransactions', 'expenses' stores
+        const DB_VERSION = 5; // Updated version for the new 'syncQueue' store
         
         // --- End of OfflineSyncDB Module ---
 
@@ -3274,7 +2973,7 @@
              // for the initial IndexedDB instantiation before wrapping starts.
              console.log(`Initialising DB stores on load for version ${newVersion}`);
              OBJECT_STORES.forEach(storeName => {
-                 if (!dbInstance.objectStoreNames.contains(storeName)) {
+                 if (storeName !== 'syncQueue' && !dbInstance.objectStoreNames.contains(storeName)) {
                       console.log('Creating store:', storeName);
                       if (storeName === 'settings') {
                            dbInstance.createObjectStore(storeName, { keyPath: 'key' });
@@ -3318,17 +3017,10 @@
         let users = [];
         let sales = [];
         let dues = [];
-        let ledgerEntries = []; // CASH LEDGER ONLY
+        let ledgerEntries = [];
         let purchaseHistory = [];
         let supplierReturns = [];
-        let banks = []; // NEW
-        let bankTransactions = []; // NEW
-        let expenses = []; // NEW (All expenses - Cash/Bank Withdrawal/Other Bank Payment)
-
-        // The Ledger Balance is now derived from ledgerEntries array only
-        let cashBalance = 0; 
-        
-        // Existing shop settings structure (updated with new categories)
+        // ধাপ ২.২: shopSettings এ snConfig সরানো হয়েছে
         let shopSettings = {
             key: 'main',
             name: "AGC নির্মাতা Software",
@@ -3337,36 +3029,27 @@
             subscriptionEndDate: null,
             ledgerCategories: {
                 expense: {
-                    'supplier_payment': 'সাপ্লায়ার পেমেন্ট (Cash)', // Now only cash payment for due
-                    'product_purchase': 'পণ্য ক্রয় (Cash)', // Now only cash purchase
-                    'customer_refund': 'কাস্টমার রিফান্ড (Cash)', 
-                    'staff_salary_cash': 'স্টাফ স্যালারি (Cash)',
-                    'others_cash_out': 'অন্যান্য ক্যাশ আউট',
-                    'cash_expense': 'সাধারণ ক্যাশ খরচ (Manual)', // Re-added for manual expense
-                    'manual_due_adjustment': 'ম্যানুয়াল বাকি অ্যাডজাস্টমেন্ট (মাইনাস)'
+                    'supplier_payment': 'সাপ্লায়ার পেমেন্ট',
+                    'product_purchase': 'পণ্য ক্রয় (নগদ)',
+                    'customer_refund': 'কাস্টমার রিফান্ড',
+                    'staff_salary': 'স্টাফ স্যালারি',
+                    'payment': 'সাধারণ পেমেন্ট',
+                    'others': 'অন্যান্য খরচ'
                 },
                 income: {
-                    'sales_income': 'বিক্রয় থেকে আয় (Cash)',
-                    'due_collection': 'বাকি টাকা কালেকশন (Cash)',
-                    'bank_to_ledger_transfer': 'ব্যাংক থেকে ক্যাশ ট্রান্সফার', // NEW
+                    'sales_income': 'বিক্রয় থেকে আয়',
+                    'due_collection': 'বাকি টাকা কালেকশন',
                     'supplier_return_credit': 'সাপ্লায়ার ফেরত ক্রেডিট',
-                    'opening_due_entry': 'ম্যানুয়াল বাকি এন্ট্রি', 
-                    'others_cash_in': 'অন্যান্য ক্যাশ ইন', // Re-added for manual ledger in
-                    'manual_due_adjustment': 'ম্যানুয়াল বাকি অ্যাডজাস্টমেন্ট (প্লাস)'
+                    'opening_due_entry': 'ম্যানুয়াল বাকি এন্ট্রি', // NEW: Manual Due Entry Category
+                    // 'internet_bill_collection': 'ইন্টারনেট বিল কালেকশন', // DELETED (ধাপ ১.৩)
+                    // 'service_bill_collection': 'সার্ভিস বিল কালেকশন', // DELETED (ধাপ ১.৩)
+                    'others': 'অন্যান্য আয়'
                 }
-            },
-            expenseCategories: { // NEW CATEGORIES FOR EXPENSES STORE
-                'bank_withdrawal_expense': 'ব্যাংক উইথড্রয়াল (খরচ)',
-                'supplier_bank_payment': 'সাপ্লায়ার পেমেন্ট (ব্যাংক)',
-                'staff_salary_bank': 'স্টাফ স্যালারি (ব্যাংক)',
-                'office_rent': 'অফিস/দোকান ভাড়া',
-                'utility_bills': 'ইউটিলিটি বিল',
-                'travel_expense': 'ভ্রমণ খরচ',
-                'other_business_expense': 'অন্যান্য ব্যবসা খরচ'
             },
             // --- New Print Settings Default Values ---
             phoneCell: "+88-031-XXXXXXX, Cell: 018XX-XXXXXX",
             vatReg: "24041124158",
+            // snConfig block removed.
         };
         if (typeof window.ADMIN_PASSWORD === 'undefined') {
             window.ADMIN_PASSWORD = 'arpan1234@#';
@@ -3459,12 +3142,11 @@
                 const [
                     productsData, suppliersData, customersData, usersData, salesData, 
                     duesData, ledgerEntriesData, settingsData, purchaseHistoryData,
-                    supplierReturnsData, banksData, bankTransactionsData, expensesData // NEW FETCH
+                    supplierReturnsData
                 ] = await Promise.all([
                     db.getAll('products'), db.getAll('suppliers'), db.getAll('customers'), db.getAll('users'),
                     db.getAll('sales'), db.getAll('dues'), db.getAll('ledgerEntries'),
-                    db.get('settings', 'main'), db.getAll('purchaseHistory'), db.getAll('supplierReturns'),
-                    db.getAll('banks'), db.getAll('bankTransactions'), db.getAll('expenses') // NEW FETCH
+                    db.get('settings', 'main'), db.getAll('purchaseHistory'), db.getAll('supplierReturns')
                 ]);
 
                 products = productsData;
@@ -3476,59 +3158,24 @@
                 users = usersData;
                 sales = salesData;
                 dues = duesData.filter(d => d.billType !== 'internet' && d.billType !== 'service'); // বকেয়া থেকেও বিলিং এন্ট্রি বাদ
-                // Filter Ledger: Exclude any non-cash categories (e.g., old bank/card payments if any were mistakenly in there)
-                ledgerEntries = ledgerEntriesData.filter(l => !l.category.includes('_bill_collection')); 
-                
+                ledgerEntries = ledgerEntriesData.filter(l => !l.category.includes('_bill_collection')); // লেজার এন্ট্রি থেকেও বিলিং এন্ট্রি বাদ
                 purchaseHistory = purchaseHistoryData;
                 supplierReturns = supplierReturnsData;
 
-                banks = banksData; // NEW
-                bankTransactions = bankTransactionsData; // NEW
-                expenses = expensesData; // NEW
 
                 if (settingsData) {
                     // Merge loaded settings with default, ensuring the new category is preserved if loaded data doesn't have it
-                    // NOTE: This complex merge/ensure logic is now simpler as it's an overwrite, but we must manually ensure all NEW fields/categories exist if missing.
                     shopSettings = {...shopSettings, ...settingsData};
                     
                     // NEW: Ensure Manual Due category exists
                     if(!shopSettings.ledgerCategories.income.opening_due_entry) {
                          shopSettings.ledgerCategories.income.opening_due_entry = 'ম্যানুয়াল বাকি এন্ট্রি';
                     }
-                    if(!shopSettings.ledgerCategories.income.bank_to_ledger_transfer) { // Ensure new category exists
-                         shopSettings.ledgerCategories.income.bank_to_ledger_transfer = 'ব্যাংক থেকে ক্যাশ ট্রান্সফার';
-                    }
                      // NEW: Ensure Adjustment category exists (for admin edit)
                     if(!shopSettings.ledgerCategories.income.manual_due_adjustment) {
                          shopSettings.ledgerCategories.income.manual_due_adjustment = 'ম্যানুয়াল বাকি অ্যাডজাস্টমেন্ট (প্লাস)';
+                         // Expense counterpart is also needed for negative adjustments
                          shopSettings.ledgerCategories.expense.manual_due_adjustment = 'ম্যানুয়াল বাকি অ্যাডজাস্টমেন্ট (মাইনাস)';
-                    }
-                    // Ensure new Bank/Cash ledger categories for product purchase/supplier payment
-                    shopSettings.ledgerCategories.expense.supplier_payment = shopSettings.ledgerCategories.expense.supplier_payment || 'সাপ্লায়ার পেমেন্ট (Cash)';
-                    shopSettings.ledgerCategories.expense.product_purchase = shopSettings.ledgerCategories.expense.product_purchase || 'পণ্য ক্রয় (Cash)';
-                    shopSettings.ledgerCategories.income.sales_income = shopSettings.ledgerCategories.income.sales_income || 'বিক্রয় থেকে আয় (Cash)';
-                    shopSettings.ledgerCategories.income.due_collection = shopSettings.ledgerCategories.income.due_collection || 'বাকি টাকা কালেকশন (Cash)';
-
-                    // Ensure Expense categories structure exists
-                    if(!shopSettings.expenseCategories) {
-                        shopSettings.expenseCategories = {
-                            'bank_withdrawal_expense': 'ব্যাংক উইথড্রয়াল (খরচ)',
-                            'supplier_bank_payment': 'সাপ্লায়ার পেমেন্ট (ব্যাংক)',
-                            'staff_salary_bank': 'স্টাফ স্যালারি (ব্যাংক)',
-                            'office_rent': 'অফিস/দোকান ভাড়া',
-                            'utility_bills': 'ইউটিলিটি বিল',
-                            'travel_expense': 'ভ্রমণ খরচ',
-                            'other_business_expense': 'অন্যান্য ব্যবসা খরচ'
-                        };
-                    } else {
-                         // Ensure system default expense categories exist
-                         if (!shopSettings.expenseCategories.bank_withdrawal_expense) shopSettings.expenseCategories.bank_withdrawal_expense = 'ব্যাংক উইথড্রয়াল (খরচ)';
-                         if (!shopSettings.expenseCategories.supplier_bank_payment) shopSettings.expenseCategories.supplier_bank_payment = 'সাপ্লায়ার পেমেন্ট (ব্যাংক)';
-                         if (!shopSettings.expenseCategories.staff_salary_bank) shopSettings.expenseCategories.staff_salary_bank = 'স্টাফ স্যালারি (ব্যাংক)';
-                         if (!shopSettings.expenseCategories.office_rent) shopSettings.expenseCategories.office_rent = 'অফিস/দোকান ভাড়া';
-                         if (!shopSettings.expenseCategories.utility_bills) shopSettings.expenseCategories.utility_bills = 'ইউটিলিটি বিল';
-                         if (!shopSettings.expenseCategories.travel_expense) shopSettings.expenseCategories.travel_expense = 'ভ্রমণ খরচ';
-                         if (!shopSettings.expenseCategories.other_business_expense) shopSettings.expenseCategories.other_business_expense = 'অন্যান্য ব্যবসা খরচ';
                     }
 
 
@@ -3584,24 +3231,18 @@
             renderProductList();
             populateCategoryFilter();
             renderSupplierList();
-            renderCustomerList(); // Customer list needs update for search
+            renderCustomerList();
             populateSupplierDatalist();
             renderSalesReport();
             populateSellerFilter();
             renderDuesList();
-            renderLedger(); // Render Cash Ledger
+            renderLedger();
             populateLedgerCategoryFilter();
             renderUserList();
             updateUserProfileDisplay();
             // --- NEW CALLS ---
             renderStockAlerts(); // 2. Stock Alert System
             populateProductReportCategoryFilter(); // 4. Sales Report - Product Wise filter
-            // NEW Bank/Expense UI updates
-            populateBankSelectors();
-            renderBankList();
-            renderExpenseCategories(); // For Expense section
-            renderExpenses();
-            // --- Update Dashboard with Cash/Bank/Expense totals (Part of updateDashboardSummary now)
         }
 
         // --- UI Element References (Original) ---
@@ -3633,8 +3274,6 @@
         const settingsSection = document.getElementById('settings-section');
         const granularReportsSection = document.getElementById('granular-reports-section'); // NEW UI Section
         const manualDuesSection = document.getElementById('manual-dues-section'); // NEW UI Section
-        const banksSection = document.getElementById('banks-section'); // NEW UI Section
-        const expensesSection = document.getElementById('expenses-section'); // NEW UI Section
 
         // Product Section Elements
         const addProductBtn = document.getElementById('add-product-btn');
@@ -3645,9 +3284,6 @@
         const productCategoryFilter = document.getElementById('product-category-filter');
         const productPurchasePriceInput = document.getElementById('product-purchase-price');
         const productMinStockInput = document.getElementById('product-min-stock'); // NEW
-        const productPurchaseTypeSelect = document.getElementById('product-purchase-type'); // NEW
-        const productPurchaseBankSelectContainer = document.getElementById('product-purchase-bank-select-container'); // NEW
-        const productPurchaseBankId = document.getElementById('product-purchase-bank-id'); // NEW
 
         // Supplier Section Elements
         const addSupplierBtn = document.getElementById('add-supplier-btn');
@@ -3661,9 +3297,6 @@
         const supplierReturnModal = document.getElementById('supplier-return-modal');
         const processSupplierReturnBtn = document.getElementById('process-supplier-return-btn');
         const filterSupplierLedgerBtn = document.getElementById('filter-supplier-ledger-btn');
-        const supplierPaymentMethodSelect = document.getElementById('supplier-payment-method'); // NEW
-        const supplierPaymentBankFields = document.getElementById('supplier-payment-bank-fields'); // NEW
-        const supplierPaymentBankId = document.getElementById('supplier-payment-bank-id'); // NEW
 
 
         // Customer Management Section Elements
@@ -3674,7 +3307,6 @@
         const customerLedgerModal = document.getElementById('customer-ledger-modal');
         const printCustomerLedgerBtn = document.getElementById('print-customer-ledger-btn');
         const filterCustomerLedgerBtn = document.getElementById('filter-customer-ledger-btn');
-        const customerManagementSearch = document.getElementById('customer-management-search'); // NEW
 
         // POS Section Elements
         const posCustomerPhoneInput = document.getElementById('pos-customer-phone');
@@ -3693,9 +3325,6 @@
         const completeSaleBtn = document.getElementById('complete-sale-btn');
         const cancelSaleEditBtn = document.getElementById('cancel-sale-edit-btn');
         const printBillBtn = document.getElementById('print-bill-btn');
-        const bankPaymentFields = document.getElementById('bank-payment-fields'); // NEW
-        const posBankId = document.getElementById('pos-bank-id'); // NEW
-        const posBankType = document.getElementById('pos-bank-type'); // NEW
 
         // Sales Report Elements
         const salesReportSearchInput = document.getElementById('sales-report-search-input');
@@ -3726,9 +3355,6 @@
         const processDuePaymentBtn = document.getElementById('process-due-payment-btn');
         const paymentReceiptSection = document.getElementById('payment-receipt-section');
         const printPaymentReceiptBtn = document.getElementById('print-payment-receipt-btn');
-        const duePaymentBankFields = document.getElementById('due-payment-bank-fields'); // NEW
-        const duePaymentBankId = document.getElementById('due-payment-bank-id'); // NEW
-        const duePaymentBankType = document.getElementById('due-payment-bank-type'); // NEW
 
         // NEW Manual Due Elements
         const addManualDueForm = document.getElementById('add-manual-due-form');
@@ -3760,9 +3386,9 @@
         const printReturnBillBtn = document.getElementById('print-return-bill-btn');
 
         // Ledger Section Elements
-        const totalCashInSpan = document.getElementById('total-cash-in'); // NEW
-        const totalCashOutSpan = document.getElementById('total-cash-out'); // NEW
-        const netCashBalanceSpan = document.getElementById('net-cash-balance'); // NEW
+        const totalOtherIncomeSpan = document.getElementById('total-other-income');
+        const totalExpensesSpan = document.getElementById('total-expenses');
+        const netLedgerBalanceSpan = document.getElementById('net-ledger-balance');
         const addLedgerEntryForm = document.getElementById('add-ledger-entry-form');
         const ledgerTypeSelect = document.getElementById('ledger-type');
         const ledgerCategorySelect = document.getElementById('ledger-category');
@@ -3777,48 +3403,6 @@
         const filterLedgerBtn = document.getElementById('filter-ledger');
         const printLedgerBtn = document.getElementById('print-ledger');
         const ledgerTableBody = document.querySelector('#ledger-table tbody');
-
-        // NEW Bank Elements
-        const totalBankBalance = document.getElementById('total-bank-balance'); // Dashboard
-        const bankSectionTotalBalance = document.getElementById('bank-section-total-balance'); // Section
-        const bankSectionTotalCredit = document.getElementById('bank-section-total-credit'); // Section
-        const bankSectionTotalDebit = document.getElementById('bank-section-total-debit'); // Section
-        const addBankBtn = document.getElementById('add-bank-btn');
-        const addBankFormContainer = document.getElementById('add-bank-form-container');
-        const addBankForm = document.getElementById('add-bank-form');
-        const bankListTableBody = document.querySelector('#bank-list-table tbody');
-        const bankTransactionBankFilter = document.getElementById('bank-transaction-bank-filter');
-        const bankTransactionTypeFilter = document.getElementById('bank-transaction-type-filter');
-        const bankTransactionsTableBody = document.querySelector('#bank-transactions-table tbody');
-        const filterBankTransactionsBtn = document.getElementById('filter-bank-transactions');
-
-        // NEW Expense Elements
-        const todayTotalExpense = document.getElementById('today-total-expense'); // Dashboard
-        const totalFilteredExpenses = document.getElementById('total-filtered-expenses'); // Section
-        const totalBankWithdrawalExpense = document.getElementById('total-bank-withdrawal-expense'); // Section
-        const totalCashExpense = document.getElementById('total-cash-expense'); // Section
-        const addExpenseForm = document.getElementById('add-expense-form');
-        const expenseCategorySelect = document.getElementById('expense-category');
-        const addExpenseCategoryBtn = document.getElementById('add-expense-category-btn');
-        const expenseSourceSelect = document.getElementById('expense-source');
-        const expenseBankFields = document.getElementById('expense-bank-fields');
-        const expenseBankIdSelect = document.getElementById('expense-bank-id');
-        const expenseAmountInput = document.getElementById('expense-amount');
-        const expenseDateInput = document.getElementById('expense-date');
-        const expenseNoteTextarea = document.getElementById('expense-note');
-        const expenseFilterFromDate = document.getElementById('expense-filter-from-date');
-        const expenseFilterToDate = document.getElementById('expense-filter-to-date');
-        const expenseFilterCategory = document.getElementById('expense-filter-category');
-        const filterExpensesBtn = document.getElementById('filter-expenses');
-        const expensesTableBody = document.querySelector('#expenses-table tbody');
-        
-        // NEW Bank to Ledger Transfer Elements
-        const bankToLedgerTransferForm = document.getElementById('bank-to-ledger-transfer-form');
-        const transferBankId = document.getElementById('transfer-bank-id');
-        const transferAmount = document.getElementById('transfer-amount');
-        const transferDate = document.getElementById('transfer-date');
-        const transferNote = document.getElementById('transfer-note');
-
 
         // Customer Data Elements
         const customerSearchInput = document.getElementById('customer-search-input');
@@ -3899,10 +3483,6 @@
             completeSaleBtn.innerHTML = '<i class="fas fa-check-circle"></i> বিক্রয় সম্পন্ন করুন';
             completeSaleBtn.dataset.editing = 'false';
             cancelSaleEditBtn.style.display = 'none';
-             // Hide bank fields
-            bankPaymentFields.style.display = 'none'; 
-            posBankId.removeAttribute('required');
-            posBankType.removeAttribute('required');
             renderCart();
             updateCartTotal();
         }
@@ -3948,14 +3528,12 @@
                 'dashboard': 'ড্যাশবোর্ড',
                 'products': 'পণ্যসমূহ',
                 'suppliers': 'সাপ্লায়ার',
-                'pos': 'বিক্রয় পয়েন্ট (POS)',
+                'pos': 'বিক্রয় (POS)',
                 'sales': 'বিক্রয় রিপোর্ট',
                 'dues': 'কাস্টমার বাকি',
                 'manual-dues': 'ম্যানুয়াল বাকি এন্ট্রি', // NEW
                 'returns': 'ফেরত পণ্য',
-                'ledger': 'ক্যাশ লেজার (Cash Book)',
-                'banks': 'ব্যাংক ব্যবস্থাপনা', // NEW
-                'expenses': 'খরচ ব্যবস্থাপনা', // NEW
+                'ledger': 'লেজার',
                 'customer-data': 'কাস্টমার ডেটা',
                 'customer-management': 'কাস্টমার ব্যবস্থাপনা',
                 'users': 'ব্যবহারকারী',
@@ -3971,14 +3549,12 @@
                 renderProductList();
                 populateCategoryFilter();
                 populateSupplierDatalist();
-                populateBankSelectors(); // NEW: For purchase by bank
             } else if (sectionId === 'suppliers') {
                 renderSupplierList();
             } else if (sectionId === 'pos') {
                 if (!currentEditingSale) {
                     resetPOSPage();
                 }
-                populateBankSelectors(); // NEW: For POS bank payment
             } else if (sectionId === 'sales') {
                 const today = new Date().toISOString().split('T')[0];
                 salesReportFromDateInput.value = today;
@@ -3990,13 +3566,11 @@
                 renderGranularReport(); 
                 document.getElementById('product-report-from-date').value = salesReportFromDateInput.value;
                 document.getElementById('product-report-to-date').value = salesReportToDateInput.value;
-                renderBankReport(); // NEW Bank Report
             }
              else if (sectionId === 'dues') {
                 duesSearchInput.value = '';
                 // Modified function wrapper will execute the dues alert buttons
                 renderDuesList(); 
-                populateBankSelectors(); // NEW: For Due payment modal
             } else if (sectionId === 'manual-dues') { // NEW Manual Due Setup
                 const today = new Date().toISOString().split('T')[0];
                 manualDueDate.value = today;
@@ -4019,29 +3593,13 @@
                 ledgerFilterTypeSelect.value = '';
                 ledgerFilterCategorySelect.value = '';
                 updateLedgerCategoryDropdown();
-                renderLedger(); // Render Cash Ledger
-            } else if (sectionId === 'banks') { // NEW Bank Section Setup
-                renderBankList();
-                populateBankTransactionFilters();
-                renderBankTransactions();
-            } else if (sectionId === 'expenses') { // NEW Expense Section Setup
-                renderExpenseCategories();
-                const today = new Date().toISOString().split('T')[0];
-                expenseDateInput.value = today;
-                expenseFilterFromDate.value = '';
-                expenseFilterToDate.value = '';
-                expenseFilterCategory.value = '';
-                populateExpenseCategoryFilter();
-                populateBankSelectors(); // For expense payment source
-                renderExpenses();
-            }
-             else if (sectionId === 'customer-data') {
+                renderLedger();
+            } else if (sectionId === 'customer-data') {
                 customerSearchInput.value = '';
                 customerSearchResultsDiv.style.display = 'none';
                 customerPurchaseHistoryDetails.style.display = 'none';
             } else if(sectionId === 'customer-management') {
                 renderCustomerList();
-                customerManagementSearch.value = '';
             } else if (sectionId === 'users') {
                 renderUserList();
             } else if (sectionId === 'settings') {
@@ -4054,21 +3612,27 @@
             document.getElementById('sidebar-app-title').textContent = name;
             document.title = name;
         }
-        
-        /**
-         * Core Financial Update: Calculates all dashboard summaries (Sales, Dues, Bank, Expense)
-         */
+
         function updateDashboardSummary() {
             const today = new Date();
-            const todaySalesAndReturns = sales.filter(transaction => {
+            const todaySales = sales.filter(transaction => {
                 const transactionDate = new Date(transaction.timestamp);
                 return transactionDate.getDate() === today.getDate() &&
                        transactionDate.getMonth() === today.getMonth() &&
                        transactionDate.getFullYear() === today.getFullYear() &&
-                       (transaction.type === 'sale' || transaction.type === 'return');
-            }).reduce((sum, t) => sum + t.finalAmount, 0);
+                       transaction.type === 'sale';
+            }).reduce((sum, sale) => sum + sale.finalAmount, 0);
 
-            document.getElementById('today-total-sales').textContent = `৳ ${todaySalesAndReturns.toLocaleString()}`;
+            const todayReturns = sales.filter(transaction => {
+                const transactionDate = new Date(transaction.timestamp);
+                return transactionDate.getDate() === today.getDate() &&
+                       transactionDate.getMonth() === today.getMonth() &&
+                       transactionDate.getFullYear() === today.getFullYear() &&
+                       transaction.type === 'return';
+            }).reduce((sum, returnTransaction) => sum + returnTransaction.finalAmount, 0);
+
+            document.getElementById('today-total-sales').textContent = `৳ ${(todaySales + todayReturns).toLocaleString()}`;
+
 
             let totalStock = products.reduce((sum, p) => sum + p.stock, 0);
             document.getElementById('total-stock-items').textContent = totalStock;
@@ -4076,16 +3640,8 @@
             const totalDuesAmount = dues.reduce((sum, due) => sum + due.remainingAmount, 0);
             document.getElementById('total-dues').textContent = `৳ ${totalDuesAmount.toLocaleString()}`;
             
-            const totalBankBalanceAmount = banks.reduce((sum, b) => sum + (b.currentBalance || 0), 0);
-            totalBankBalance.textContent = `৳ ${totalBankBalanceAmount.toLocaleString()}`; // Dashboard Bank Balance
-
-            const todayExpenses = expenses.filter(e => {
-                 const expenseDate = new Date(e.timestamp);
-                 return expenseDate.getDate() === today.getDate() &&
-                        expenseDate.getMonth() === today.getMonth() &&
-                        expenseDate.getFullYear() === today.getFullYear();
-            }).reduce((sum, e) => sum + e.amount, 0);
-            todayTotalExpense.textContent = `৳ ${todayExpenses.toLocaleString()}`; // Dashboard Today Expense
+            const totalSupplierDuesAmount = suppliers.reduce((sum, s) => sum + (s.currentDue || 0), 0);
+            document.getElementById('total-supplier-dues').textContent = `৳ ${totalSupplierDuesAmount.toLocaleString()}`;
         }
 
         function renderRecentActivities() {
@@ -4179,9 +3735,7 @@
             document.getElementById('nav-dues').style.display = 'list-item';
             document.getElementById('nav-manual-dues').style.display = 'list-item'; // NEW
             document.getElementById('nav-returns').style.display = 'list-item';
-            document.getElementById('nav-ledger').style.display = 'list-item'; // Cash Ledger
-            document.getElementById('nav-banks').style.display = 'list-item'; // NEW
-            document.getElementById('nav-expenses').style.display = 'list-item'; // NEW
+            document.getElementById('nav-ledger').style.display = 'list-item';
             document.getElementById('nav-customer-data').style.display = 'list-item';
             document.getElementById('nav-customer-management').style.display = 'list-item';
              document.getElementById('nav-granular-reports').style.display = 'list-item'; // NEW
@@ -4193,13 +3747,8 @@
             } else if (role === 'seller') {
                 document.getElementById('nav-users').style.display = 'none';
                 document.getElementById('add-product-btn').style.display = 'none';
-                 // Hide financial/admin sections for sellers for safety
+                 // Hide Manual Due Entry for sellers for safety
                  document.getElementById('nav-manual-dues').style.display = 'none';
-                 document.getElementById('nav-banks').style.display = 'none';
-                 document.getElementById('nav-expenses').style.display = 'none';
-                 document.getElementById('nav-ledger').style.display = 'none';
-                 document.getElementById('nav-granular-reports').style.display = 'none';
-                 document.getElementById('nav-settings').style.display = 'none';
             }
             checkSubscription();
         }
@@ -4335,7 +3884,6 @@
                 document.getElementById('product-min-stock').value = window.SALES_FORECAST_CONFIG.PRODUCT_MIN_STOCK_DEFAULT; // NEW: Set default min stock
                 document.getElementById('product-serial').value = 'স্বয়ংক্রিয়ভাবে তৈরি হবে'; 
                 populateSupplierDatalist();
-                populateBankSelectors(); // Populate bank selectors for purchase
             } else {
                 alert('আপনার নতুন পণ্য যোগ করার অনুমতি নেই।');
             }
@@ -4348,24 +3896,14 @@
             });
         });
 
-        // NEW: Toggle visibility of bank selector for product purchase
-        productPurchaseTypeSelect.addEventListener('change', (e) => {
-             if (e.target.value === 'bank') {
-                 productPurchaseBankSelectContainer.style.display = 'block';
-                 productPurchaseBankId.setAttribute('required', 'required');
-             } else {
-                 productPurchaseBankSelectContainer.style.display = 'none';
-                 productPurchaseBankId.removeAttribute('required');
-             }
-        });
-
         // --- Product Form Submission (MODIFIED for 2. Stock Alert and Existing Logic Re-wrap) ---
+        // Removed original `addProductForm.addEventListener('submit', async (event) => { ... })` and re-add below with updated logic:
+
         addProductForm.addEventListener('submit', async (event) => {
             event.preventDefault();
             const editingId = addProductForm.dataset.editingId;
             const id = editingId || generateUniqueId('P');
             
-            const purchaseType = productPurchaseTypeSelect.value;
             const newProductData = {
                 name: document.getElementById('product-name').value,
                 category: document.getElementById('product-category').value,
@@ -4379,17 +3917,12 @@
                 supplierName: document.getElementById('product-supplier-name').value.trim(),
                 supplierPhone: document.getElementById('product-supplier-phone').value,
                 supplierAddress: document.getElementById('product-supplier-address').value,
-                purchaseType: purchaseType,
-                purchaseBankId: purchaseType === 'bank' ? productPurchaseBankId.value : null // NEW
+                purchaseType: document.getElementById('product-purchase-type').value
             };
 
             if (newProductData.purchasePrice > newProductData.price) {
                 alert('ক্রয় মূল্য বিক্রয় মূল্যের চেয়ে বেশি হতে পারে না।');
                 return;
-            }
-            if (purchaseType === 'bank' && !newProductData.purchaseBankId) {
-                 alert('ব্যাংক ক্রয় হলে ব্যাংক নির্বাচন আবশ্যক।');
-                 return;
             }
             
             // নতুন SN জেনারেশন
@@ -4403,16 +3936,14 @@
 
 
             let stockAdded = 0;
-            let stockRemoved = 0;
-            const originalStock = parseInt(addProductForm.dataset.originalStock || '0');
-            
-            if (newProductData.stock > originalStock) {
-                stockAdded = newProductData.stock - originalStock;
-            } else if (newProductData.stock < originalStock) {
-                stockRemoved = originalStock - newProductData.stock;
+            if (editingId) {
+                const originalStock = parseInt(addProductForm.dataset.originalStock || '0');
+                if (newProductData.stock > originalStock) {
+                    stockAdded = newProductData.stock - originalStock;
+                }
+            } else {
+                stockAdded = newProductData.stock;
             }
-            
-            const dbPromises = [];
 
             if (newProductData.supplierName && stockAdded > 0) {
                 const purchaseValue = stockAdded * newProductData.purchasePrice;
@@ -4431,73 +3962,52 @@
                     supplierName: supplier.name,
                     type: 'purchase',
                     paymentType: newProductData.purchaseType,
-                    bankId: newProductData.purchaseBankId, // NEW
                     items: [{ productId: id, productName: newProductData.name, quantity: stockAdded, purchasePrice: newProductData.purchasePrice, totalValue: purchaseValue }],
                     totalAmount: purchaseValue
                 };
                 purchaseHistory.push(newPurchaseRecord);
-                dbPromises.push(db.put('purchaseHistory', newPurchaseRecord));
+                await db.put('purchaseHistory', newPurchaseRecord);
 
                 if (newProductData.purchaseType === 'cash') {
-                    // Rule 1: Cash/Ledger
                     supplier.totalPaid = (supplier.totalPaid || 0) + purchaseValue;
                     const newLedgerEntry = {
                         id: generateUniqueId('L'), timestamp: new Date().toISOString(), type: 'expense',
-                        category: 'product_purchase', description: `${stockAdded} ${newProductData.unit} ${newProductData.name} (Supplier: ${supplier.name})`,
-                        amount: purchaseValue, supplierId: supplier.id, supplierName: supplier.name,
-                        sourceType: 'product_purchase_cash' // NEW source type
+                        category: 'product_purchase', description: `${stockAdded} ${newProductData.unit} ${newProductData.name}`,
+                        amount: purchaseValue, supplierId: supplier.id, supplierName: supplier.name
                     };
                     ledgerEntries.push(newLedgerEntry);
-                    dbPromises.push(db.put('ledgerEntries', newLedgerEntry));
-                } else if (newProductData.purchaseType === 'bank' && newProductData.purchaseBankId) {
-                     // Rule 4: Bank Payment - Ledger UNCHANGED, Bank Balance DECREASES
-                    supplier.totalPaid = (supplier.totalPaid || 0) + purchaseValue;
-                    const bank = banks.find(b => b.id === newProductData.purchaseBankId);
-                    if (bank) {
-                        bank.currentBalance -= purchaseValue;
-                        dbPromises.push(db.put('banks', bank));
-                        
-                        const newBankTransaction = {
-                            id: generateUniqueId('BT'),
-                            timestamp: new Date().toISOString(),
-                            bankId: bank.id,
-                            bankName: bank.name,
-                            type: 'debit', // Withdrawal / Payment
-                            amount: purchaseValue,
-                            description: `Product Purchase (Supplier: ${supplier.name})`,
-                            refId: newPurchaseRecord.id,
-                            refType: 'purchase'
-                        };
-                        bankTransactions.push(newBankTransaction);
-                        dbPromises.push(db.put('bankTransactions', newBankTransaction));
-                    }
+                    await db.put('ledgerEntries', newLedgerEntry);
                 } else {
                     supplier.currentDue = (supplier.currentDue || 0) + purchaseValue;
                 }
-                dbPromises.push(db.put('suppliers', supplier));
+                await db.put('suppliers', supplier);
                 renderSupplierList();
             }
 
             const finalProductData = { id, ...(existingProduct || {}), ...newProductData }; // Ensure merge of existing and new properties
-            dbPromises.push(db.put('products', finalProductData));
-            await Promise.all(dbPromises);
+            await db.put('products', finalProductData);
+            
+            // Note: Array update logic for `products` is now primarily handled by `db.put` triggering `initializeData` via the sync wrapper. 
+            // Manual array update is skipped here for safety, though technically faster locally.
 
             alert(editingId ? 'পণ্য সফলভাবে আপডেট করা হয়েছে!' : 'পণ্য সফলভাবে যোগ করা হয়েছে!');
 
             // Update UI/Cleanup
-            await initializeData(); // Reload all to update arrays and UI safely
+            renderProductList();
+            populateCategoryFilter();
+            renderLedger();
+            updateDashboardSummary();
             addProductFormContainer.style.display = 'none';
             addProductForm.reset();
         });
 
 
-        // --- Product Edit (MODIFIED for 2. Stock Alert & NEW Purchase Type) ---
+        // --- Product Edit (MODIFIED for 2. Stock Alert) ---
         function editProduct(id) {
             const product = products.find(p => p.id === id);
             if (product) {
                 addProductFormContainer.style.display = 'block';
                 populateSupplierDatalist();
-                populateBankSelectors(); // Populate bank selectors for purchase
                 document.getElementById('product-name').value = product.name;
                 document.getElementById('product-category').value = product.category || '';
                 document.getElementById('product-serial').value = product.serialNumber || 'N/A'; 
@@ -4512,18 +4022,7 @@
                 document.getElementById('product-supplier-name').value = product.supplierName || '';
                 document.getElementById('product-supplier-phone').value = product.supplierPhone || '';
                 document.getElementById('product-supplier-address').value = product.supplierAddress || '';
-                
-                productPurchaseTypeSelect.value = product.purchaseType || 'cash';
-                productPurchaseBankId.value = product.purchaseBankId || ''; // NEW
-                
-                // Toggle bank field visibility
-                if (product.purchaseType === 'bank') {
-                     productPurchaseBankSelectContainer.style.display = 'block';
-                     productPurchaseBankId.setAttribute('required', 'required');
-                } else {
-                     productPurchaseBankSelectContainer.style.display = 'none';
-                     productPurchaseBankId.removeAttribute('required');
-                }
+                document.getElementById('product-purchase-type').value = product.purchaseType || 'cash';
 
                 addProductForm.dataset.editingId = product.id;
                 addProductForm.dataset.originalStock = product.stock || '0';
@@ -4535,7 +4034,6 @@
                 document.getElementById('product-unit').readOnly = !isAdmin;
                 document.getElementById('product-purchase-price').readOnly = !isAdmin;
                 document.getElementById('product-price').readOnly = !isAdmin;
-                productPurchaseTypeSelect.disabled = !isAdmin;
             }
         }
         // ... (The rest of the ORIGINAL functions UNMODIFIED, down to DOMContentLoaded) ...
@@ -4689,16 +4187,6 @@
         
         let currentSupplierForPayment = null;
 
-        supplierPaymentMethodSelect.addEventListener('change', (e) => {
-             if (e.target.value === 'bank') {
-                 supplierPaymentBankFields.style.display = 'block';
-                 supplierPaymentBankId.setAttribute('required', 'required');
-             } else {
-                 supplierPaymentBankFields.style.display = 'none';
-                 supplierPaymentBankId.removeAttribute('required');
-             }
-        });
-
         function openPaySupplierDueModal(supplier) {
             currentSupplierForPayment = supplier;
             document.getElementById('modal-supplier-name').textContent = supplier.name;
@@ -4706,8 +4194,6 @@
             const paymentAmountInput = document.getElementById('supplier-payment-amount');
             paymentAmountInput.value = supplier.currentDue || 0;
             paymentAmountInput.max = supplier.currentDue || 0;
-            supplierPaymentMethodSelect.value = 'cash';
-            supplierPaymentMethodSelect.dispatchEvent(new Event('change')); // Trigger event to hide bank fields
             updateSupplierModalRemainingDue();
             paySupplierDueModal.style.display = 'flex';
         }
@@ -4727,62 +4213,29 @@
              if (!currentSupplierForPayment) return;
 
             const paymentAmount = parseFloat(document.getElementById('supplier-payment-amount').value);
-            const paymentMethod = supplierPaymentMethodSelect.value;
-            const bankId = supplierPaymentBankId.value;
-
             if (isNaN(paymentAmount) || paymentAmount <= 0 || paymentAmount > (currentSupplierForPayment.currentDue || 0)) {
                 alert('বৈধ পরিমাণ প্রবেশ করান।');
                 return;
             }
-            if (paymentMethod === 'bank' && !bankId) {
-                alert('ব্যাংক পেমেন্টের জন্য ব্যাংক নির্বাচন করুন।');
-                return;
-            }
 
-            const dbPromises = [];
             currentSupplierForPayment.totalPaid = (currentSupplierForPayment.totalPaid || 0) + paymentAmount;
             currentSupplierForPayment.currentDue = (currentSupplierForPayment.currentDue || 0) - paymentAmount;
-            dbPromises.push(db.put('suppliers', currentSupplierForPayment));
+            await db.put('suppliers', currentSupplierForPayment);
             
-            if (paymentMethod === 'cash') {
-                // Rule 1: Cash Payment (Ledger Expense)
-                const newLedgerEntry = {
-                    id: generateUniqueId('L'), timestamp: new Date().toISOString(), type: 'expense',
-                    category: 'supplier_payment', description: `বকেয়া পরিশোধ (Supplier: ${currentSupplierForPayment.name})`,
-                    amount: paymentAmount, supplierId: currentSupplierForPayment.id, supplierName: currentSupplierForPayment.name,
-                    sourceType: 'supplier_payment_cash'
-                };
-                ledgerEntries.push(newLedgerEntry);
-                dbPromises.push(db.put('ledgerEntries', newLedgerEntry));
-            } else if (paymentMethod === 'bank' && bankId) {
-                 // Rule 4: Bank Payment (Bank Debit)
-                const bank = banks.find(b => b.id === bankId);
-                if (bank) {
-                    bank.currentBalance -= paymentAmount;
-                    dbPromises.push(db.put('banks', bank));
-                    
-                    const newBankTransaction = {
-                        id: generateUniqueId('BT'),
-                        timestamp: new Date().toISOString(),
-                        bankId: bank.id,
-                        bankName: bank.name,
-                        type: 'debit', // Payment
-                        amount: paymentAmount,
-                        description: `Supplier Due Payment (Supplier: ${currentSupplierForPayment.name})`,
-                        refId: currentSupplierForPayment.id,
-                        refType: 'supplier_payment'
-                    };
-                    bankTransactions.push(newBankTransaction);
-                    dbPromises.push(db.put('bankTransactions', newBankTransaction));
-                }
-            }
-            
-            await Promise.all(dbPromises);
+            const newLedgerEntry = {
+                id: generateUniqueId('L'), timestamp: new Date().toISOString(), type: 'expense',
+                category: 'supplier_payment', description: `বকেয়া পরিশোধ`,
+                amount: paymentAmount, supplierId: currentSupplierForPayment.id, supplierName: currentSupplierForPayment.name
+            };
+            ledgerEntries.push(newLedgerEntry);
+            await db.put('ledgerEntries', newLedgerEntry);
 
             alert('সাপ্লায়ার পেমেন্ট সফলভাবে রেকর্ড করা হয়েছে!');
             
             paySupplierDueModal.style.display = 'none';
-            await initializeData(); // Reload all
+            renderSupplierList();
+            renderLedger();
+            updateDashboardSummary();
             currentSupplierForPayment = null;
         });
         
@@ -4810,7 +4263,6 @@
             supplierHistoryModal.style.display = 'flex';
         }
 
-        // MODIFIED: renderSupplierLedgerTables to separate Cash and Bank purchases/payments
         function renderSupplierLedgerTables(supplierId, fromDateStr = '', toDateStr = '') {
             const fromDate = fromDateStr ? moment(fromDateStr).startOf('day') : null;
             const toDate = toDateStr ? moment(toDateStr).endOf('day') : null;
@@ -4822,32 +4274,31 @@
             };
 
             // Table Body References
-            const cashBankPurchaseBody = document.querySelector('#supplier-cash-bank-purchase-table tbody'); // NEW table reference
+            const cashPurchaseBody = document.querySelector('#supplier-cash-purchase-table tbody');
             const duePurchaseBody = document.querySelector('#supplier-due-purchase-table tbody');
             const paymentBody = document.querySelector('#supplier-payment-table tbody');
             const returnBody = document.querySelector('#supplier-return-table-ledger tbody');
 
             // Clear old data
-            cashBankPurchaseBody.innerHTML = '<tr><td colspan="4">কোনো লেনদেন নেই</td></tr>'; // Colspan 4
+            cashPurchaseBody.innerHTML = '<tr><td colspan="3">কোনো লেনদেন নেই</td></tr>';
             duePurchaseBody.innerHTML = '<tr><td colspan="3">কোনো লেনদেন নেই</td></tr>';
-            paymentBody.innerHTML = '<tr><td colspan="4">কোনো লেনদেন নেই</td></tr>'; // Colspan 4
+            paymentBody.innerHTML = '<tr><td colspan="3">কোনো লেনদেন নেই</td></tr>';
             returnBody.innerHTML = '<tr><td colspan="3">কোনো লেনদেন নেই</td></tr>';
 
-            let totalCashBankPurchase = 0, totalDue = 0, totalPayment = 0, totalReturn = 0;
+            let totalCash = 0, totalDue = 0, totalPayment = 0, totalReturn = 0;
 
-            // Populate Cash/Bank Purchases
-            const cashBankPurchases = purchaseHistory.filter(p => p.supplierId === supplierId && (p.paymentType === 'cash' || p.paymentType === 'bank') && filterByDate(p));
-            if(cashBankPurchases.length > 0) {
-                cashBankPurchaseBody.innerHTML = '';
-                cashBankPurchases.forEach(item => {
-                    totalCashBankPurchase += item.totalAmount;
+            // Populate Cash Purchases
+            const cashPurchases = purchaseHistory.filter(p => p.supplierId === supplierId && p.paymentType === 'cash' && filterByDate(p));
+            if(cashPurchases.length > 0) {
+                cashPurchaseBody.innerHTML = '';
+                cashPurchases.forEach(item => {
+                    totalCash += item.totalAmount;
                     const detailsHtml = '<ul>' + item.items.map(p => `<li>${p.productName} - ${p.quantity} x ৳${p.purchasePrice}</li>`).join('') + '</ul>';
-                    const paymentTypeDisplay = item.paymentType === 'cash' ? 'নগদ (Cash)' : `ব্যাংক (${banks.find(b => b.id === item.bankId)?.name || 'N/A'})`;
-                    cashBankPurchaseBody.innerHTML += `<tr><td>${moment(item.timestamp).format('L')}</td><td>${paymentTypeDisplay}</td><td>${detailsHtml}</td><td>৳ ${item.totalAmount.toLocaleString()}</td></tr>`;
+                    cashPurchaseBody.innerHTML += `<tr><td>${moment(item.timestamp).format('L')}</td><td>${detailsHtml}</td><td>৳ ${item.totalAmount.toLocaleString()}</td></tr>`;
                 });
             }
 
-            // Populate Due Purchases (UNCHANGED)
+            // Populate Due Purchases
             const duePurchases = purchaseHistory.filter(p => p.supplierId === supplierId && p.paymentType === 'due' && filterByDate(p));
             if(duePurchases.length > 0) {
                 duePurchaseBody.innerHTML = '';
@@ -4858,23 +4309,17 @@
                 });
             }
 
-            // Populate Payments (from Ledger & Bank Transactions)
-            const cashPayments = ledgerEntries.filter(e => e.supplierId === supplierId && e.category === 'supplier_payment' && filterByDate(e));
-            const bankPayments = bankTransactions.filter(bt => bt.refType === 'supplier_payment' && bt.refId === supplierId && filterByDate(bt));
-
-            const allPayments = [...cashPayments.map(p => ({ ...p, medium: 'Cash' })), 
-                                 ...bankPayments.map(p => ({ ...p, medium: 'Bank', bankName: banks.find(b => b.id === p.bankId)?.name }))];
-            
-            if(allPayments.length > 0) {
+            // Populate Payments
+            const payments = ledgerEntries.filter(e => e.supplierId === supplierId && e.category === 'supplier_payment' && filterByDate(e));
+            if(payments.length > 0) {
                 paymentBody.innerHTML = '';
-                allPayments.sort((a,b) => moment(b.timestamp) - moment(a.timestamp)).forEach(item => {
+                payments.forEach(item => {
                     totalPayment += item.amount;
-                    const mediumDisplay = item.medium === 'Cash' ? 'নগদ (Cash)' : `ব্যাংক (${item.bankName || 'N/A'})`;
-                    paymentBody.innerHTML += `<tr><td>${moment(item.timestamp).format('L')}</td><td>${mediumDisplay}</td><td>${item.description || 'পেমেন্ট'}</td><td>৳ ${item.amount.toLocaleString()}</td></tr>`;
+                    paymentBody.innerHTML += `<tr><td>${moment(item.timestamp).format('L')}</td><td>${item.description || 'পেমেন্ট'}</td><td>৳ ${item.amount.toLocaleString()}</td></tr>`;
                 });
             }
 
-            // Populate Returns (UNCHANGED)
+            // Populate Returns
             const returns = supplierReturns.filter(r => r.supplierId === supplierId && filterByDate(r));
             if(returns.length > 0){
                 returnBody.innerHTML = '';
@@ -4886,7 +4331,7 @@
             }
 
             // Update totals
-            document.getElementById('total-cash-bank-purchase').textContent = `মোট: ৳ ${totalCashBankPurchase.toLocaleString()}`; // NEW ID
+            document.getElementById('total-cash-purchase').textContent = `মোট: ৳ ${totalCash.toLocaleString()}`;
             document.getElementById('total-due-purchase').textContent = `মোট: ৳ ${totalDue.toLocaleString()}`;
             document.getElementById('total-supplier-payment').textContent = `মোট: ৳ ${totalPayment.toLocaleString()}`;
             document.getElementById('total-supplier-return').textContent = `মোট: ৳ ${totalReturn.toLocaleString()}`;
@@ -5068,12 +4513,11 @@
             currentReturningSupplier.totalPurchased = (currentReturningSupplier.totalPurchased || 0) - totalReturnValue;
             dbPromises.push(db.put('suppliers', currentReturningSupplier));
             
-            // 4. Add a ledger entry for the credit (Income, affects Cash Ledger, as this assumes Due is reduced first)
+            // 4. (Optional but good for accounting) Add a ledger entry for the credit
             const newLedgerEntry = {
                 id: generateUniqueId('L'), timestamp: new Date().toISOString(), type: 'income',
                 category: 'supplier_return_credit', description: `পণ্য ফেরত`,
-                amount: totalReturnValue, supplierId: currentReturningSupplier.id, supplierName: currentReturningSupplier.name,
-                sourceType: 'supplier_return_credit' // NEW source type
+                amount: totalReturnValue, supplierId: currentReturningSupplier.id, supplierName: currentReturningSupplier.name
             };
             ledgerEntries.push(newLedgerEntry);
             dbPromises.push(db.put('ledgerEntries', newLedgerEntry));
@@ -5095,29 +4539,6 @@
 
         // --- POS (Point of Sale) Management ---
         
-        // NEW: Toggle POS bank payment fields
-        paymentMethodSelect.addEventListener('change', (e) => {
-             const isBankPayment = e.target.value === 'bank';
-             const isDue = e.target.value === 'due';
-
-             bankPaymentFields.style.display = isBankPayment ? 'block' : 'none';
-             if (isBankPayment) {
-                 posBankId.setAttribute('required', 'required');
-                 posBankType.setAttribute('required', 'required');
-             } else {
-                 posBankId.removeAttribute('required');
-                 posBankType.removeAttribute('required');
-             }
-
-             if (isDue) {
-                posCustomerNameInput.setAttribute('required', 'required');
-                posCustomerPhoneInput.setAttribute('required', 'required');
-            } else {
-                posCustomerNameInput.removeAttribute('required');
-                posCustomerPhoneInput.removeAttribute('required');
-            }
-        });
-
         // POS সার্চে স্ক্যানিং যোগ করা হয়েছে
         posProductSearch.addEventListener('keyup', (e) => {
             const searchText = e.target.value.trim();
@@ -5323,6 +4744,15 @@
 
         discountAmountInput.addEventListener('input', updateCartTotal);
 
+        paymentMethodSelect.addEventListener('change', (e) => {
+            if (e.target.value === 'due') {
+                posCustomerNameInput.setAttribute('required', 'required');
+                posCustomerPhoneInput.setAttribute('required', 'required');
+            } else {
+                posCustomerNameInput.removeAttribute('required');
+                posCustomerPhoneInput.removeAttribute('required');
+            }
+        });
         
         function launchPrint(title, contentHtml, printAreaClass = '') {
             const printWindow = window.open('', '_blank', 'height=800,width=800');
@@ -5471,33 +4901,152 @@
 
             const isEditing = completeSaleBtn.dataset.editing === 'true';
 
-            // ... (Editing Logic - Simplified as it is extremely complex to fully re-implement here)
-            if (isEditing) {
-                 alert('বিক্রয় সম্পাদনা এই ভার্সনে সাপোর্ট করে না। অনুগ্রহ করে নতুন করে বিক্রি সম্পন্ন করুন।');
-                 return;
+            // Logic for UPDATING a sale (Editable Invoice Enhancement)
+            if (isEditing && currentEditingSale) {
+                const saleIndex = sales.findIndex(s => s.id === currentEditingSale.id);
+                if(saleIndex === -1) {
+                    alert('সম্পাদনা করার জন্য মূল বিক্রয় খুঁজে পাওয়া যায়নি!');
+                    resetPOSPage();
+                    return;
+                }
+                
+                // --- Recalculate Financials ---
+                const newTotalAmount = currentCart.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
+                const newDiscountAmount = parseFloat(discountAmountInput.value) || 0;
+                const newFinalAmount = newTotalAmount - newDiscountAmount;
+                let newTotalProfit = 0;
+                 for (const item of currentCart) {
+                    const product = products.find(p => p.id === item.productId);
+                    if (!product) {
+                         alert(`দুঃখিত! ${item.name} পণ্যটি আর मौजूद নেই।`);
+                        return;
+                    }
+                    const itemProfit = (item.unitPrice - (item.purchasePrice || 0)) * item.quantity;
+                    newTotalProfit += itemProfit;
+                }
+
+                // --- 1. Calculate Differences ---
+                const amountDifference = newFinalAmount - currentEditingSale.finalAmount;
+                const profitDifference = newTotalProfit - currentEditingSale.profit;
+                
+                const dbPromises = [];
+                
+                // --- 2. Stock Adjustment (Revert old, Apply new) ---
+                const productUpdates = {};
+
+                // Revert old quantities (Add back to stock)
+                currentEditingSale.items.forEach(item => {
+                     if (!productUpdates[item.productId]) productUpdates[item.productId] = products.find(p => p.id === item.productId);
+                     if (productUpdates[item.productId]) {
+                        productUpdates[item.productId].stock += item.quantity;
+                     }
+                });
+
+                // Subtract new quantities (Check stock and reduce)
+                for(const item of currentCart) {
+                     if (!productUpdates[item.productId]) productUpdates[item.productId] = products.find(p => p.id === item.productId);
+                     
+                     if(productUpdates[item.productId]) {
+                        const newStock = productUpdates[item.productId].stock - item.quantity;
+                        if (newStock < 0) {
+                             alert(`দুঃখিত! ${item.name} স্টকে পর্যাপ্ত নেই। (বাকি: ${productUpdates[item.productId].stock})`);
+                             // Revert local in-memory changes and exit
+                             return; 
+                        }
+                        productUpdates[item.productId].stock = newStock;
+                     } else {
+                        alert(`পণ্য ${item.name} খুঁজে পাওয়া যায়নি।`);
+                        return;
+                     }
+                }
+                // Save all updated products
+                Object.values(productUpdates).forEach(p => dbPromises.push(db.put('products', p)));
+
+
+                // --- 3. Financial Adjustment (Customer, Dues, Ledger) ---
+                const customer = customers.find(c => c.id === currentEditingSale.customerId);
+                
+                if (Math.abs(amountDifference) > 0.01) {
+                    if(customer) {
+                        customer.totalPurchased += amountDifference; // Gross sales adjustment
+
+                        if(currentEditingSale.status === 'বাকি') {
+                            customer.currentDue += amountDifference; // Due adjustment
+                        } else if (currentEditingSale.status === 'সম্পূর্ণ') {
+                            customer.totalPaid += amountDifference; // Paid adjustment (only if total was fully paid)
+                        }
+                        dbPromises.push(db.put('customers', customer));
+                    }
+
+                    if(currentEditingSale.status === 'বাকি') {
+                        const due = dues.find(d => d.saleId === currentEditingSale.saleId);
+                        if(due) {
+                            due.originalAmount = newFinalAmount;
+                            due.remainingAmount += amountDifference;
+                            due.remainingAmount = Math.max(0, due.remainingAmount); // Ensure no negative due
+                            
+                            // If remaining due is now zero, remove from dues list and update sale status
+                            if (due.remainingAmount < 0.01) {
+                                sales[saleIndex].status = 'সম্পূর্ণ';
+                                dbPromises.push(db.delete('dues', due.id));
+                            } else {
+                                sales[saleIndex].status = 'বাকি';
+                                dbPromises.push(db.put('dues', due));
+                            }
+                        }
+                    } else { // Cash/Card/bKash (Completed Sale)
+                         const ledgerEntry = ledgerEntries.find(l => l.saleId === currentEditingSale.saleId && l.category === 'sales_income');
+                         if(ledgerEntry) {
+                            ledgerEntry.amount += amountDifference;
+                            dbPromises.push(db.put('ledgerEntries', ledgerEntry));
+                         }
+                    }
+                }
+
+                // --- 4. Update the Sale Object ---
+                const oldTimestamp = sales[saleIndex].timestamp;
+                sales[saleIndex] = {
+                    ...sales[saleIndex],
+                    items: currentCart,
+                    totalAmount: newTotalAmount,
+                    discountAmount: newDiscountAmount,
+                    finalAmount: newFinalAmount,
+                    profit: newTotalProfit,
+                    timestamp: new Date().toISOString(), // Update timestamp to show modification time
+                    isRevised: true, // NEW flag for print function
+                };
+
+                dbPromises.push(db.put('sales', sales[saleIndex]));
+                
+                // Execute all database promises
+                await Promise.all(dbPromises);
+                
+                // Refresh all in-memory arrays and UI after put 
+                await initializeData();
+
+                alert('বিক্রয় সফলভাবে আপডেট হয়েছে!');
+                const saleJustCompletedId = sales[saleIndex].saleId;
+                resetPOSPage();
+                
+                // Show print button for revised invoice
+                printBillBtn.style.display = 'block';
+                printBillBtn.dataset.saleId = saleJustCompletedId;
+                showSection('sales');
+                return;
             }
 
-
-            // --- LOGIC FOR CREATING A NEW SALE (MODIFIED for Cash/Bank Rule) --- //
+            // --- LOGIC FOR CREATING A NEW SALE (Original) --- //
             const saleId = generateUniqueId('S');
             const timestamp = new Date().toISOString();
             const sellerId = currentUser.id;
             const totalAmount = parseFloat(cartSubtotalSpan.textContent.replace('৳ ', '').replace(/,/g, ''));
             const discountAmount = parseFloat(discountAmountInput.value) || 0;
             const finalAmount = parseFloat(cartFinalTotalSpan.textContent.replace('৳ ', '').replace(/,/g, ''));
-            const paymentMethod = paymentMethodSelect.value; // 'cash', 'bank', or 'due'
-            const bankId = posBankId.value;
-            const bankType = posBankType.value; // 'card', 'bKash', etc.
+            const paymentMethod = paymentMethodSelect.value;
             const customerName = posCustomerNameInput.value.trim() || 'ক্যাশ কাস্টমার';
             const customerPhone = posCustomerPhoneInput.value.trim();
             const customerAddress = posCustomerAddressInput.value.trim() || 'N/A';
             const status = (paymentMethod === 'due') ? 'বাকি' : 'সম্পূর্ণ';
-
-            // Input validation for bank payment
-            if (paymentMethod === 'bank' && (!bankId || !bankType)) {
-                 alert('ব্যাংক পেমেন্টের জন্য ব্যাংক ও প্রকারভেদ নির্বাচন করুন।');
-                 return;
-            }
 
             let totalProfit = 0;
             const productUpdatePromises = [];
@@ -5538,8 +5087,7 @@
                 customer.totalPurchased += finalAmount;
                 if(status !== 'বাকি') { // If not due, it's paid
                     customer.totalPaid += finalAmount;
-                }
-                if(status === 'বাকি') {
+                } else {
                     customer.currentDue += finalAmount;
                 }
                 await db.put('customers', customer);
@@ -5563,9 +5111,7 @@
                 status,
                 type: 'sale',
                 items: currentCart,
-                isRevised: false,
-                bankId: paymentMethod === 'bank' ? bankId : null, // Corrected assignment
-                bankType: paymentMethod === 'bank' ? bankType : null // NEW
+                isRevised: false // New sale is never revised
             };
             
             sales.push(newSale);
@@ -5589,49 +5135,23 @@
                 };
                 dues.push(newDue);
                 dbPromises.push(db.put('dues', newDue));
-            } 
-            
-            // --- Financial Transaction (Cash/Bank Income) ---
-            if (paymentMethod === 'cash') {
-                 // Rule 1: Cash Payment (Ledger Income)
+            } else {
+                // ** NEW LOGIC: Add cash/card/bkash sale to ledger **
                 const newLedgerEntry = {
                     id: generateUniqueId('L'),
                     timestamp: timestamp,
                     type: 'income',
                     category: 'sales_income',
-                    description: `বিক্রয় থেকে আয় (Cash) - বিল: ${saleId}`,
+                    description: `বিক্রয় থেকে আয় - বিল: ${saleId}`,
                     amount: finalAmount,
                     customerId: customerId,
                     customerName: customerName,
                     saleId: saleId,
-                    sourceType: 'sale_income_cash'
                 };
                 ledgerEntries.push(newLedgerEntry);
                 dbPromises.push(db.put('ledgerEntries', newLedgerEntry));
-            } else if (paymentMethod === 'bank' && bankId) {
-                // Rule 2/3/4: Bank Payment (Bank Credit)
-                const bank = banks.find(b => b.id === bankId);
-                if (bank) {
-                    bank.currentBalance = (bank.currentBalance || 0) + finalAmount;
-                    dbPromises.push(db.put('banks', bank));
-                    
-                    const newBankTransaction = {
-                        id: generateUniqueId('BT'),
-                        timestamp: timestamp,
-                        bankId: bank.id,
-                        bankName: bank.name,
-                        type: 'credit', // Deposit / Credit
-                        amount: finalAmount,
-                        description: `Sale Income (${bankType}) - Customer: ${customerName}`,
-                        customerName: customerName,
-                        refId: saleId,
-                        refType: 'sale_income'
-                    };
-                    bankTransactions.push(newBankTransaction);
-                    dbPromises.push(db.put('bankTransactions', newBankTransaction));
-                }
             }
-
+            
             await Promise.all(dbPromises);
             
             // Refresh all in-memory arrays and UI after put 
@@ -5643,7 +5163,10 @@
             resetPOSPage();
             printBillBtn.style.display = 'block';
             printBillBtn.dataset.saleId = saleJustCompletedId;
-        }); // End of posPaymentForm submit listener
+            // renderDashboard();
+            // renderCustomerList();
+            // renderLedger();
+        });
 
 
         printBillBtn.addEventListener('click', () => {
@@ -5818,11 +5341,11 @@
                     <table style="width: 100%; border-collapse: collapse; margin: 10px 0; border: 1px solid #000;">
                         <thead>
                             <tr style="border: 1px solid #000;">
-                                <th style="width: 5%; text-align: center; padding: 5px;">SL</th>
-                                <th style="width: 45%; padding: 5px;">Item Information</th>
-                                <th style="width: 10%; text-align: right; padding: 5px;">Qty</th>
-                                <th style="width: 20%; text-align: right; padding: 5px;">Rate</th>
-                                <th style="width: 20%; text-align: right; padding: 5px;">Amount</th>
+                                <th style="width: 5%; text-align: center; border: 1px solid #000; padding: 5px;">SL</th>
+                                <th style="width: 45%; border: 1px solid #000; padding: 5px;">Item Information</th>
+                                <th style="width: 10%; text-align: right; border: 1px solid #000; padding: 5px;">Qty</th>
+                                <th style="width: 20%; text-align: right; border: 1px solid #000; padding: 5px;">Rate</th>
+                                <th style="width: 20%; text-align: right; border: 1px solid #000; padding: 5px;">Amount</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -5972,17 +5495,8 @@
                     profitCell.textContent = '***';
                 }
 
-                let paymentDisplay = '';
-                if (isReturn) {
-                    paymentDisplay = 'ফেরত';
-                } else if (transaction.paymentMethod === 'cash') {
-                    paymentDisplay = 'নগদ (Cash)';
-                } else if (transaction.paymentMethod === 'bank') {
-                    paymentDisplay = `ব্যাংক (${transaction.bankType || 'N/A'})`;
-                } else {
-                    paymentDisplay = transaction.status;
-                }
-                row.insertCell(6).textContent = paymentDisplay;
+
+                row.insertCell(6).textContent = isReturn ? 'ফেরত' : (transaction.paymentMethod === 'cash' ? 'নগদ' : transaction.paymentMethod === 'card' ? 'কার্ড' : transaction.paymentMethod === 'bKash' ? 'বিকাশ' : transaction.paymentMethod === 'nagad' ? 'নগদ' : transaction.status);
                 row.insertCell(7).textContent = isReturn ? 'ফেরত' : transaction.status;
 
                 const itemsCell = row.insertCell(8);
@@ -6054,14 +5568,6 @@
                 discountAmountInput.value = saleToEdit.discountAmount;
                 paymentMethodSelect.value = saleToEdit.paymentMethod;
                 
-                if (saleToEdit.paymentMethod === 'bank') {
-                    bankPaymentFields.style.display = 'block';
-                    posBankId.value = saleToEdit.bankId || '';
-                    posBankType.value = saleToEdit.bankType || 'transfer';
-                } else {
-                    bankPaymentFields.style.display = 'none';
-                }
-
                 renderCart();
                 updateCartTotal();
                 
@@ -6169,19 +5675,6 @@
 
         let currentDueForPayment = null;
 
-        // NEW: Toggle visibility of due payment bank selector
-        paymentMethodDueSelect.addEventListener('change', (e) => {
-             if (e.target.value === 'bank') {
-                 duePaymentBankFields.style.display = 'block';
-                 duePaymentBankId.setAttribute('required', 'required');
-                 duePaymentBankType.setAttribute('required', 'required');
-             } else {
-                 duePaymentBankFields.style.display = 'none';
-                 duePaymentBankId.removeAttribute('required');
-                 duePaymentBankType.removeAttribute('required');
-             }
-        });
-
         // --- NEW/MODIFIED: openPayDueModal now targets the entire customer due ---
         function openPayDueModal(due) {
             // Find the customer object to get the total outstanding due
@@ -6202,7 +5695,6 @@
             paymentAmountInput.value = due.remainingAmount; // Pre-fill with the clicked bill's remaining amount
             paymentAmountInput.max = totalCustomerDue; // Max amount is the total customer due
             paymentMethodDueSelect.value = 'cash';
-            paymentMethodDueSelect.dispatchEvent(new Event('change')); // Trigger toggle
             updateModalRemainingDue();
             paymentReceiptSection.style.display = 'none';
             processDuePaymentBtn.disabled = false;
@@ -6238,8 +5730,6 @@
 
             let paidAmount = parseFloat(paymentAmountInput.value);
             const paymentMethod = paymentMethodDueSelect.value;
-            const bankId = duePaymentBankId.value;
-            const bankType = duePaymentBankType.value;
             const customerId = currentDueForPayment.customerId;
             const customer = customers.find(c => c.id === customerId);
 
@@ -6250,10 +5740,6 @@
 
             if (isNaN(paidAmount) || paidAmount <= 0) {
                 alert('বৈধ পরিমাণ প্রবেশ করান।');
-                return;
-            }
-             if (paymentMethod === 'bank' && (!bankId || !bankType)) {
-                alert('ব্যাংক পেমেন্টের জন্য ব্যাংক ও প্রকারভেদ নির্বাচন করুন।');
                 return;
             }
             if (paidAmount > customer.currentDue) {
@@ -6281,59 +5767,35 @@
                 due.remainingAmount -= amountToPay;
                 remainingPaidAmount -= amountToPay;
                 
-                // Ledger / Bank Transaction for this specific payment portion
-                const transactionId = generateUniqueId(paymentMethod === 'cash' ? 'L' : 'BT');
-                const description = `বাকি টাকা কালেকশন - ${due.description} (${paymentMethod === 'bank' ? bankType : 'Cash'})`;
-                
-                if (paymentMethod === 'cash') {
-                     // Rule 1: Cash Payment (Ledger Income)
-                    const newLedgerEntry = {
-                        id: transactionId,
-                        timestamp: new Date().toISOString(),
-                        type: 'income',
-                        category: 'due_collection', 
-                        description: description,
-                        amount: amountToPay,
-                        customerId: due.customerId,
-                        customerName: due.customerName,
-                        saleId: due.saleId,
-                        appliesToMonths: due.appliesToMonths || [],
-                        sourceType: 'due_collection_cash'
-                    };
-                    ledgerEntries.push(newLedgerEntry);
-                    dbPromises.push(db.put('ledgerEntries', newLedgerEntry));
-                } else if (paymentMethod === 'bank' && bankId) {
-                     // Rule 4: Bank Payment (Bank Credit)
-                    const bank = banks.find(b => b.id === bankId);
-                    if (bank) {
-                        bank.currentBalance += amountToPay;
-                        dbPromises.push(db.put('banks', bank));
-                        
-                        const newBankTransaction = {
-                            id: transactionId,
-                            timestamp: new Date().toISOString(),
-                            bankId: bank.id,
-                            bankName: bank.name,
-                            type: 'credit', 
-                            amount: amountToPay,
-                            description: description,
-                            customerName: customer.name,
-                            refId: due.saleId,
-                            refType: 'due_collection'
-                        };
-                        bankTransactions.push(newBankTransaction);
-                        dbPromises.push(db.put('bankTransactions', newBankTransaction));
-                    }
-                }
+                // Ledger Entry for this specific payment portion
+                const ledgerCategory = 'due_collection'; // Simplified after billing removal
+                const newLedgerEntry = {
+                    id: generateUniqueId('L'),
+                    timestamp: new Date().toISOString(),
+                    type: 'income',
+                    category: ledgerCategory,
+                    description: `বাকি টাকা কালেকশন - ${due.description}`,
+                    amount: amountToPay,
+                    customerId: due.customerId,
+                    customerName: due.customerName,
+                    saleId: due.saleId,
+                    appliedMonths: due.appliesToMonths || []
+                };
+                ledgerEntries.push(newLedgerEntry);
+                dbPromises.push(db.put('ledgerEntries', newLedgerEntry));
 
                 updatedDues.push(due);
-                paidDuesInfo.push({ description: due.description, amount: amountToPay, medium: paymentMethod === 'bank' ? bankType : 'Cash' });
+                paidDuesInfo.push({ description: due.description, amount: amountToPay });
             }
             
             // --- Customer Total Update (New/General Payment) ---
+            // If there's any remainingPaidAmount left, it's either an overpayment or was manually allocated to a due without a record (e.g. an opening due not in dues array)
+            // For simplicity and adherence to the ledger rule, the total paid amount is logged.
+            
             customer.totalPaid = (customer.totalPaid || 0) + paidAmount;
             customer.currentDue = (customer.currentDue || 0) - paidAmount;
             // The remaining amount should not be negative in currentDue unless we allow advance payment.
+            // For now, if remainingPaidAmount > 0, it is an overpayment that reduces currentDue to 0.
             if (customer.currentDue < 0) customer.currentDue = 0; 
             dbPromises.push(db.put('customers', customer));
 
@@ -6378,7 +5840,7 @@
             printPaymentReceiptBtn.dataset.customerName = customer.name;
             printPaymentReceiptBtn.dataset.customerPhone = customer.phone;
             printPaymentReceiptBtn.dataset.paidAmount = paidAmount;
-            printPaymentReceiptBtn.dataset.paymentMethod = paidDuesInfo[0]?.medium || paymentMethod; // Use the payment medium of the first item, or the general method
+            printPaymentReceiptBtn.dataset.paymentMethod = paymentMethod;
             printPaymentReceiptBtn.dataset.remainingDue = customer.currentDue;
             printPaymentReceiptBtn.dataset.paidDuesInfo = JSON.stringify(paidDuesInfo);
             paymentReceiptSection.style.display = 'block';
@@ -6386,18 +5848,23 @@
             processDuePaymentBtn.disabled = true;
             paymentAmountInput.disabled = true;
             paymentMethodDueSelect.disabled = true;
+
+            // renderDuesList();
+            // renderCustomerList();
+            // renderDashboard();
+            // renderLedger();
         });
 
         printPaymentReceiptBtn.addEventListener('click', (e) => {
             const {customerName, customerPhone, paidAmount, paymentMethod, remainingDue, paidDuesInfo} = e.target.dataset;
             const paidBills = JSON.parse(paidDuesInfo);
 
-            const paymentMethodText = paidBills[0]?.medium || paymentMethod === 'cash' ? 'নগদ' : 'ব্যাংক/মোবাইল';
+            const paymentMethodText = paymentMethod === 'cash' ? 'নগদ' : paymentMethod === 'card' ? 'কার্ড' : 'মোবাইল';
             const logoHtml = shopSettings.logoUrl ? `<div class="center"><img src="${shopSettings.logoUrl}" alt="Logo" style="max-height: 80px; max-width: 200px; margin-bottom: 10px;"></div>` : '';
             
             let paidBillsHtml = '<h4>পরিশোধিত বিলের বিবরণ</h4><table>';
             paidBills.forEach(bill => {
-                paidBillsHtml += `<tr><td>${bill.description} (${bill.medium})</td><td class="right">৳ ${parseFloat(bill.amount).toLocaleString()}</td></tr>`;
+                paidBillsHtml += `<tr><td>${bill.description}</td><td class="right">৳ ${parseFloat(bill.amount).toLocaleString()}</td></tr>`;
             });
             paidBillsHtml += '</table>';
 
@@ -6554,8 +6021,6 @@
             let dbPromises = [];
             let validReturn = false;
             let cashRefundAmount = 0; 
-            // Note: In this version, we assume all refunds go out of Cash Ledger for simplicity. 
-            // A more complex system would track original payment method.
 
             document.querySelectorAll('#return-items-table tbody tr').forEach(row => {
                 const qtyInput = row.querySelector('.return-item-qty');
@@ -6639,13 +6104,13 @@
             if (customer) {
                 customer.totalPurchased += returnTransaction.finalAmount; // totalAmount is negative
                 
-                // If the return was a refund, reduce totalPaid 
+                // If the return was a refund, reduce totalPaid (or total due if sale was due)
                  if (returnedItems[0].type === 'refund') {
+                     // Simple case: assume a refund decreases the total paid if the customer had paid before. 
+                     // This is simplified and might not reflect complex accounting.
                      customer.totalPaid = Math.max(0, (customer.totalPaid || 0) - totalReturnedValue); 
-                 } 
-                 
-                 // If the original sale was due, the return can reduce the remaining due.
-                 if (currentReturnOriginalSale.status === 'বাকি' || (currentReturnOriginalSale.status !== 'সম্পূর্ণ' && currentReturnOriginalSale.paymentMethod === 'due')) {
+                 } else if (currentReturnOriginalSale.status === 'বাকি') {
+                     // If the original sale was due, the return can reduce the remaining due.
                       const dueRecord = dues.find(d => d.saleId === currentReturnOriginalSale.saleId);
                       if(dueRecord) {
                           dueRecord.remainingAmount = Math.max(0, dueRecord.remainingAmount - totalReturnedValue);
@@ -6673,8 +6138,7 @@
                     amount: cashRefundAmount,
                     customerId: currentReturnOriginalSale.customerId,
                     customerName: currentReturnOriginalSale.customerName,
-                    saleId: currentReturnOriginalSale.saleId,
-                    sourceType: 'customer_refund_cash'
+                    saleId: currentReturnOriginalSale.saleId
                 };
                 ledgerEntries.push(refundLedgerEntry);
                 dbPromises.push(db.put('ledgerEntries', refundLedgerEntry));
@@ -6693,6 +6157,11 @@
             returnSuccessMessage.style.display = 'block';
             displayReturnId.textContent = returnId;
             printReturnBillBtn.dataset.returnId = returnId;
+
+            // // Refresh relevant UI components (redundant due to initializeData)
+            // renderSalesReport(salesReportFromDateInput.value, salesReportToDateInput.value, salesReportSellerSelect.value);
+            // renderDashboard();
+            // renderLedger(); 
         });
 
         printReturnBillBtn.addEventListener('click', (e) => {
@@ -6749,7 +6218,7 @@
         });
 
 
-        // --- Ledger Management (Updated - Cash Only) ---
+        // --- Ledger Management (Updated) ---
         function updateLedgerCategoryDropdown() {
             const type = ledgerTypeSelect.value;
             const categories = shopSettings.ledgerCategories[type];
@@ -6777,23 +6246,21 @@
 
         addLedgerCategoryBtn.addEventListener('click', async () => {
             const type = ledgerTypeSelect.value;
-            const typeText = type === 'expense' ? 'ক্যাশ আউট' : 'ক্যাশ ইন';
-            const newCategoryName = prompt(`নতুন ${typeText} ক্যাটাগরির নাম লিখুন (Manual Entry):`);
+            const typeText = type === 'expense' ? 'খরচ' : 'আয়';
+            const newCategoryName = prompt(`নতুন ${typeText} ক্যাটাগরির নাম লিখুন:`);
 
             if (newCategoryName && newCategoryName.trim() !== '') {
                 const newCategoryKey = newCategoryName.trim().toLowerCase().replace(/\s+/g, '_');
                 // Use custom categories only (no system keys)
-                if (['sales_income', 'due_collection', 'customer_refund', 'product_purchase', 'supplier_payment', 'opening_due_entry', 'manual_due_adjustment', 'bank_to_ledger_transfer'].includes(newCategoryKey)) {
+                if (['sales_income', 'due_collection', 'customer_refund', 'product_purchase', 'supplier_payment', 'opening_due_entry', 'manual_due_adjustment'].includes(newCategoryKey)) {
                     alert('এই নামটি সিস্টেমের জন্য সংরক্ষিত।');
                     return;
                 }
                 if (shopSettings.ledgerCategories[type][newCategoryKey]) {
-                    alert('এই ক্যাটাগরিতি আগে থেকেই আছে।');
+                    alert('এই ক্যাটাগরিটি আগে থেকেই আছে।');
                     return;
                 }
-                // Use generic 'others_cash_in/out' keys for manual entry
-                const targetKey = type === 'income' ? 'others_cash_in' : 'others_cash_out'; 
-                shopSettings.ledgerCategories[type][targetKey] = newCategoryName.trim();
+                shopSettings.ledgerCategories[type][newCategoryKey] = newCategoryName.trim();
                 await db.put('settings', shopSettings);
                 alert('ক্যাটাগরি সফলভাবে যোগ করা হয়েছে!');
                 updateLedgerCategoryDropdown();
@@ -6801,7 +6268,6 @@
             }
         });
 
-        // MODIFIED: renderLedger (Cash Only)
         function renderLedger(fromDateStr = '', toDateStr = '', filterType = '', filterCategory = '') {
             ledgerTableBody.innerHTML = '';
             let filteredLedger = ledgerEntries;
@@ -6837,7 +6303,7 @@
                 filteredLedger.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp)).forEach(entry => {
                     const row = ledgerTableBody.insertRow();
                     row.insertCell(0).textContent = new Date(entry.timestamp).toLocaleDateString();
-                    row.insertCell(1).textContent = entry.type === 'expense' ? 'ক্যাশ আউট' : 'ক্যাশ ইন';
+                    row.insertCell(1).textContent = entry.type === 'expense' ? 'খরচ' : 'আয়';
                     
                     const categoryName = shopSettings.ledgerCategories[entry.type]?.[entry.category] || entry.category || 'N/A';
                     row.insertCell(2).textContent = categoryName;
@@ -6867,21 +6333,17 @@
                     deleteBtn.className = 'danger-btn';
                     deleteBtn.addEventListener('click', () => deleteLedgerEntry(entry.id));
                     // Prevent deleting auto-generated ledger entries
-                    if (['sales_income', 'due_collection', 'customer_refund', 'product_purchase', 'supplier_payment', 'opening_due_entry', 'manual_due_adjustment', 'bank_to_ledger_transfer'].includes(entry.category) || entry.sourceType === 'expense_transfer_cash') {
+                    if (['sales_income', 'due_collection', 'customer_refund', 'product_purchase', 'supplier_payment', 'opening_due_entry', 'manual_due_adjustment'].includes(entry.category)) {
                         deleteBtn.disabled = true;
                     }
                     actionCell.appendChild(deleteBtn);
                 });
             }
 
-            // Calculate Cash Balance: Sum of all incomes minus sum of all expenses in the Ledger store.
-            cashBalance = ledgerEntries.filter(e => e.type === 'income').reduce((sum, e) => sum + e.amount, 0) - 
-                          ledgerEntries.filter(e => e.type === 'expense').reduce((sum, e) => sum + e.amount, 0);
-
-            totalCashInSpan.textContent = `৳ ${totalIncome.toLocaleString()}`;
-            totalCashOutSpan.textContent = `৳ ${totalExpenses.toLocaleString()}`;
-            netCashBalanceSpan.textContent = `৳ ${cashBalance.toLocaleString()}`;
-            netCashBalanceSpan.style.color = cashBalance < 0 ? '#ef4444' : '#22c55e';
+            totalOtherIncomeSpan.textContent = `৳ ${totalIncome.toLocaleString()}`;
+            totalExpensesSpan.textContent = `৳ ${totalExpenses.toLocaleString()}`;
+            netLedgerBalanceSpan.textContent = `৳ ${(totalIncome - totalExpenses).toLocaleString()}`;
+            netLedgerBalanceSpan.style.color = (totalIncome - totalExpenses) < 0 ? '#ef4444' : '#22c55e';
 
             if (currentUser && currentUser.role !== 'admin') { 
                  addLedgerEntryForm.style.display = 'none';
@@ -6909,8 +6371,8 @@
             }
             
             // Prevent manual adding of restricted categories
-            if (['sales_income', 'due_collection', 'customer_refund', 'product_purchase', 'supplier_payment', 'opening_due_entry', 'manual_due_adjustment', 'bank_to_ledger_transfer'].includes(category)) {
-                alert('এই ক্যাটাগরিটি স্বয়ংক্রিয়ভাবে তৈরি হয় বা সংরক্ষিত। ম্যানুয়ালি যোগ করা যায় না।');
+            if (['sales_income', 'due_collection', 'customer_refund', 'product_purchase', 'supplier_payment', 'opening_due_entry', 'manual_due_adjustment'].includes(category)) {
+                alert('এই ক্যাটাগরিটি ম্যানুয়ালি যোগ করা যায় না।');
                 return;
             }
 
@@ -6920,8 +6382,7 @@
                 type: type,
                 category: category,
                 description: description,
-                amount: amount,
-                sourceType: type === 'income' ? 'manual_cash_in' : 'manual_cash_out'
+                amount: amount
             };
             await db.put('ledgerEntries', newEntry);
             // Local array update needed before reload/UI update
@@ -7001,7 +6462,7 @@
                 <div class="center">
                     <h2>${shopSettings.name}</h2>
                     <p>${shopSettings.address}</p>
-                    <h3>ক্যাশ লেজার রিপোর্ট (Cash Book)</h3>
+                    <h3>লেজার রিপোর্ট</h3>
                     <p>তারিখ: ${fromDateStr ? moment(fromDateStr).format('LL') : 'শুরু'} থেকে ${toDateStr ? moment(toDateStr).format('LL') : 'আজ'}</p>
                 </div>
                 <hr>
@@ -7020,7 +6481,7 @@
                             <tr>
                                 <td style="vertical-align: top;">${moment(entry.timestamp).format('L')}</td>
                                 <td style="vertical-align: top;">
-                                    ${entry.type === 'expense' ? 'ক্যাশ আউট' : 'ক্যাশ ইন'} - ${categoryName}
+                                    ${entry.type === 'expense' ? 'খরচ' : 'আয়'} - ${categoryName}
                                     ${entry.description ? `<br><small>${entry.description}</small>` : ''}
                                 </td>
                                 <td class="right" style="vertical-align: top;">৳ ${entry.amount.toLocaleString()}</td>
@@ -7031,9 +6492,9 @@
                 </table>
                 <hr>
                 <div class="right">
-                    <p>মোট ক্যাশ ইন: ৳ ${totalIncome.toLocaleString()}</p>
-                    <p>মোট ক্যাশ আউট: ৳ ${totalExpenses.toLocaleString()}</p>
-                    <p><strong>বর্তমান ক্যাশ ব্যালেন্স: ৳ ${netBalance.toLocaleString()}</strong></p>
+                    <p>মোট আয়: ৳ ${totalIncome.toLocaleString()}</p>
+                    <p>মোট খরচ: ৳ ${totalExpenses.toLocaleString()}</p>
+                    <p><strong>নিট ব্যালেন্স: ৳ ${netBalance.toLocaleString()}</strong></p>
                 </div>
                 <hr>
                 <p class="center">ধন্যবাদ!</p>
@@ -7048,7 +6509,7 @@
             }
             const entryToDelete = ledgerEntries.find(entry => entry.id === id);
             // Block deletion of system-generated entries
-            if (['sales_income', 'due_collection', 'customer_refund', 'product_purchase', 'supplier_payment', 'opening_due_entry', 'manual_due_adjustment', 'bank_to_ledger_transfer'].includes(entryToDelete.category)) {
+            if (['sales_income', 'due_collection', 'customer_refund', 'product_purchase', 'supplier_payment', 'opening_due_entry', 'manual_due_adjustment'].includes(entryToDelete.category)) {
                  alert('স্বয়ংক্রিয়ভাবে তৈরি লেনদেন মুছে ফেলা যাবে না।');
                  return;
             }
@@ -7208,27 +6669,9 @@
         }
 
         // --- Customer Management (New Section) ---
-        function renderCustomerList(searchTerm = '') {
+        function renderCustomerList() {
             customerListTableBody.innerHTML = '';
-            let filteredCustomers = customers.filter(c => !c.customerCategory);
-            
-            if (searchTerm) {
-                const lowerCaseSearchTerm = searchTerm.toLowerCase();
-                 filteredCustomers = filteredCustomers.filter(c =>
-                    c.name.toLowerCase().includes(lowerCaseSearchTerm) ||
-                    c.phone.toLowerCase().includes(lowerCaseSearchTerm)
-                 );
-            }
-
-            if (filteredCustomers.length === 0 && searchTerm) {
-                 customerListTableBody.innerHTML = '<tr><td colspan="7">কোনো কাস্টমার খুঁজে পাওয়া যায়নি।</td></tr>';
-                 return;
-            } else if (filteredCustomers.length === 0) {
-                 customerListTableBody.innerHTML = '<tr><td colspan="7">কোনো কাস্টমার যোগ করা হয়নি।</td></tr>';
-                 return;
-            }
-
-            filteredCustomers.forEach(customer => { // Only show general customers
+            customers.filter(c => !c.customerCategory).forEach(customer => { // Only show general customers
                 const row = customerListTableBody.insertRow();
                 row.insertCell(0).textContent = customer.name;
                 row.insertCell(1).textContent = customer.phone;
@@ -7266,16 +6709,9 @@
 
                 if (currentUser && currentUser.role !== 'admin') {
                     editBtn.disabled = true;
-                    // Hide add button for sellers
-                    document.getElementById('add-customer-btn').style.display = 'none';
                 }
             });
         }
-        
-        // NEW: Customer Management Search Listener
-        customerManagementSearch.addEventListener('input', (e) => {
-             renderCustomerList(e.target.value.trim());
-        });
         
         // ** NEW: Admin Due Adjustment Logic **
         async function adjustCustomerDue(customerId) {
@@ -7354,7 +6790,7 @@
             }
 
 
-            // 3. Create Ledger Entry for Audit (Ledger should track this for audit/balance sync)
+            // 3. Create Ledger Entry for Audit
             const newLedgerEntry = {
                 id: generateUniqueId('L'),
                 timestamp: new Date().toISOString(),
@@ -7364,7 +6800,7 @@
                 amount: adjustmentAmount,
                 customerId: customerId,
                 customerName: customer.name,
-                saleId: 'ADJUST_' + generateUniqueId('L') 
+                saleId: 'ADJUST_' + generateUniqueId('L') // Unique ID for audit trail
             };
             ledgerEntries.push(newLedgerEntry);
             dbPromises.push(db.put('ledgerEntries', newLedgerEntry));
@@ -7423,30 +6859,6 @@
                 };
                 customers.push(newCustomer);
                 await db.put('customers', newCustomer);
-
-                // Add to Dues table if there is an opening due
-                 if (newCustomer.openingDue > 0) {
-                     const dueId = generateUniqueId('D');
-                     const newDueRecord = {
-                        id: dueId,
-                        dueId: dueId,
-                        saleId: dueId, 
-                        customerId: newCustomer.id,
-                        customerName: newCustomer.name,
-                        customerPhone: newCustomer.phone,
-                        originalAmount: newCustomer.openingDue,
-                        remainingAmount: newCustomer.openingDue,
-                        paidAmount: 0,
-                        dateIssued: new Date().toISOString(),
-                        description: `প্রাথমিক বকেয়া`,
-                        billType: 'opening_due',
-                        appliesToMonths: [] 
-                    };
-                    dues.push(newDueRecord);
-                    await db.put('dues', newDueRecord);
-                }
-
-
                 alert('নতুন কাস্টমার যোগ করা হয়েছে!');
             }
             // Update UI
@@ -7549,6 +6961,8 @@
             
             // 3. Ledger Entry: NO direct Ledger 'income' entry here. 
             // The money hasn't been collected yet, it's just an outstanding receivable.
+            // Ledger entry happens only on Due Payment. (This is the change requested by user)
+            // The `totalPurchased` acts as the financial offset for tracking purposes.
 
             await Promise.all(dbPromises);
             await initializeData(); // Reload all to update UI and arrays
@@ -7983,28 +7397,21 @@
                 customerSales.forEach(item => {
                     totalSales += item.finalAmount;
                     const detailsHtml = '<ul>' + item.items.map(p => `<li>${p.name} - ${p.quantity} x ৳${p.unitPrice}</li>`).join('') + '</ul>';
-                    const paymentTypeDisplay = item.paymentMethod === 'due' ? 'বাকি' : item.paymentMethod === 'cash' ? 'নগদ (Cash)' : `ব্যাংক (${item.bankType || 'N/A'})`;
-                    salesBody.innerHTML += `<tr><td>${moment(item.timestamp).format('L')}</td><td>${paymentTypeDisplay}</td><td>${detailsHtml}</td><td>৳ ${item.finalAmount.toLocaleString()}</td></tr>`;
+                    salesBody.innerHTML += `<tr><td>${moment(item.timestamp).format('L')}</td><td>${item.status === 'বাকি' ? 'বাকি' : 'নগদ'}</td><td>${detailsHtml}</td><td>৳ ${item.finalAmount.toLocaleString()}</td></tr>`;
                 });
             }
             
-            // Filter Ledger for Cash Due Collections
-            const cashPayments = ledgerEntries.filter(e => e.customerId === customerId && (e.category === 'due_collection' || e.category === 'manual_due_adjustment') && filterByDate(e));
-            // Filter Bank Transactions for Due Collections
-            const bankPayments = bankTransactions.filter(bt => bt.refType === 'due_collection' && bt.customerName === currentViewingCustomer.name && filterByDate(bt));
-            
-            const allPayments = [...cashPayments.map(p => ({ ...p, medium: 'Cash' })), 
-                                 ...bankPayments.map(p => ({ ...p, medium: p.bankName || 'Bank', amount: p.amount }))];
-
-             if(allPayments.length > 0) {
+            // Filter ledger for due_collection and manual_due_adjustment 
+            const customerPayments = ledgerEntries.filter(e => e.customerId === customerId && (e.category === 'due_collection' || e.category === 'manual_due_adjustment') && filterByDate(e));
+             if(customerPayments.length > 0) {
                 paymentsBody.innerHTML = '';
-                allPayments.sort((a,b) => moment(b.timestamp) - moment(a.timestamp)).forEach(item => {
-                    if (item.type === 'income' || item.type === 'credit') {
+                customerPayments.forEach(item => {
+                    if (item.type === 'income') {
                         totalPayments += item.amount;
-                        paymentsBody.innerHTML += `<tr><td>${moment(item.timestamp).format('L')}</td><td>${item.medium || 'N/A'}</td><td>${item.description || 'পেমেন্ট'}</td><td>৳ ${item.amount.toLocaleString()}</td></tr>`;
-                    } else if (item.type === 'expense' || item.type === 'debit') { // Negative Adjustment
-                        totalPayments -= item.amount; 
-                        paymentsBody.innerHTML += `<tr style="color: #dc3545;"><td>${moment(item.timestamp).format('L')}</td><td>${item.medium || 'N/A'}</td><td>${item.description || 'নেগেটিভ অ্যাডজাস্টমেন্ট'}</td><td>- ৳ ${item.amount.toLocaleString()}</td></tr>`;
+                        paymentsBody.innerHTML += `<tr><td>${moment(item.timestamp).format('L')}</td><td>${item.description || 'পেমেন্ট'}</td><td>৳ ${item.amount.toLocaleString()}</td></tr>`;
+                    } else if (item.type === 'expense') { // Negative Adjustment
+                        totalPayments -= item.amount; // Deduct from total payments for a cleaner view (optional: can be a separate table)
+                        paymentsBody.innerHTML += `<tr style="color: #dc3545;"><td>${moment(item.timestamp).format('L')}</td><td>${item.description || 'নেগেটিভ অ্যাডজাস্টমেন্ট'}</td><td>- ৳ ${item.amount.toLocaleString()}</td></tr>`;
                     }
                 });
             }
@@ -8088,561 +7495,476 @@
             `;
             launchPrint(`কাস্টমার লেজার - ${customer.name}`, printContent);
         }
-        
+
         // =================================================================================
-        // ========================= NEW ADD-ON MODULES (Cash/Bank/Expense) ================
+        // ========================= NEW ADD-ON MODULES ====================================
         // =================================================================================
+
+
+        // ===================================
+        // 6. FORECAST + WHATSAPP / SMS ALERT ADD-ON
+        // (notify.js conceptual file, exposed to window)
+        // ===================================
         
-        // --- Bank Module Core Functions (CRUD) ---
-        
-        function populateBankSelectors() {
-            const allBankSelectors = [posBankId, duePaymentBankId, supplierPaymentBankId, productPurchaseBankId, expenseBankIdSelect, transferBankId, bankTransactionBankFilter];
+        function generateAlertMessage(type, recipient, data) {
+             const shopName = shopSettings.name || 'MY POS SOF';
+             let message = `*${shopName}* থেকে মেসেজ:*\n`;
             
-            allBankSelectors.forEach(select => {
-                 const currentValue = select.value;
-                 select.innerHTML = select === bankTransactionBankFilter ? '<option value="">সকল ব্যাংক</option>' : '<option value="">-- ব্যাংক নির্বাচন করুন --</option>';
-                 
-                 banks.forEach(bank => {
-                    const option = document.createElement('option');
-                    option.value = bank.id;
-                    option.textContent = `${bank.name} (A/C: ${bank.accountNumber.slice(-4)}) - ৳ ${bank.currentBalance.toLocaleString()}`;
-                    select.appendChild(option);
+            if (type === 'STOCK_LOW') {
+                 message += `⚠ সতর্কবার্তা! নিম্নোক্ত পণ্যগুলির স্টক কমে গেছে: \n`;
+                 data.forEach(p => {
+                    message += `— ${p.name}: মাত্র ${p.stock}টি!\n`;
                  });
-                 // Restore selected value if possible
-                 if (currentValue && select.querySelector(`option[value="${currentValue}"]`)) {
-                    select.value = currentValue;
-                 }
-            });
-        }
-        
-        addBankBtn.addEventListener('click', () => {
-             addBankFormContainer.style.display = 'block';
-             addBankForm.reset();
-             addBankForm.dataset.editingId = '';
-        });
-        
-        document.getElementById('cancel-bank-entry').addEventListener('click', () => {
-             addBankFormContainer.style.display = 'none';
-        });
+                 message += `অবিলম্বে নতুন অর্ডার দিন।`;
+                 
+            } else if (type === 'CUSTOMER_DUE' && data.due) {
+                 message += `প্রিয় ${data.name}, \nআপনার মোট বকেয়া ৳ ${data.due.toLocaleString()}। অনুগ্রহ করে দ্রুত পরিশোধ করুন।\n\n`;
+                 message += `ধন্যবাদান্তে,\n${shopName}`;
 
-        addBankForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const editingId = addBankForm.dataset.editingId;
-            const id = editingId || generateUniqueId('B');
-            
-            const bankName = document.getElementById('bank-name').value.trim();
-            const accountNumber = document.getElementById('account-number').value.trim();
-            const openingBalance = parseFloat(document.getElementById('opening-balance').value) || 0;
-
-            const existingBank = banks.find(b => b.accountNumber === accountNumber && b.id !== id);
-            if (existingBank) {
-                alert('এই অ্যাকাউন্ট নম্বরটি আগে থেকেই বিদ্যমান।');
-                return;
+            } else if (type === 'FORECAST_READY') {
+                 message += `📈 ${moment().add(1, 'month').format('MMMM')}-এর বিক্রয় পূর্বাভাস তৈরি!\n`;
+                 message += `মোট বিক্রয় (অনুমানিত): ৳ ${data.sale.toLocaleString()}\n`;
+                 message += `মোট লাভ (অনুমানিত): ৳ ${data.profit.toLocaleString()}\n`;
+                 message += `শীর্ষ পণ্য (অনুমানিত): ${data.topProduct || 'N/A'}\n`;
+                 message += `ব্যবসা বৃদ্ধির প্রবণতা: ${data.trend}`;
             }
 
-            let newBankData = {
-                id, bankName, accountNumber, openingBalance
-            };
+             return encodeURIComponent(message);
+        }
 
-            if (editingId) {
-                 const index = banks.findIndex(b => b.id === id);
-                 const existing = banks[index];
-                 
-                 // Update only editable fields, preserving currentBalance and other historical data
-                 newBankData = { ...existing, bankName, accountNumber, openingBalance };
-                 await db.put('banks', newBankData);
-                 alert('ব্যাংক সফলভাবে আপডেট করা হয়েছে!');
+        // Exposed Function for 6: Due Payment Trigger (WhatsApp Link)
+        window.sendWhatsAppDueAlert = (phone, name, due) => {
+            if (!phone || !due || phone.length < 5) {
+                alert('কাস্টমার ফোন নম্বর বা বাকি টাকার পরিমাণ নেই।');
+                return;
+            }
+             // Phone number preprocessing for international format (assumes BD or valid digits)
+             const finalPhone = phone.replace(/[^\d]/g, '').slice(-11);
+             const alertMessage = generateAlertMessage('CUSTOMER_DUE', name, { name, due });
+             const whatsappLink = `https://wa.me/+88${finalPhone}?text=${alertMessage}`; 
+             window.open(whatsappLink, '_blank');
+        }
+
+        // Exposed Function for 6: Quick Message Prompt for Dashboard/UI
+         window.promptForCustomerAlert = () => {
+             const phone = prompt('কাস্টমার মোবাইল নম্বর লিখুন (Due বাদে অন্যান্য মেসেজের জন্য):');
+             if (phone) {
+                 const message = prompt('মেসেজটি লিখুন:');
+                 if (message) {
+                    const encodedMessage = encodeURIComponent(`*${shopSettings.name}* থেকে মেসেজ: ${message}`);
+                    const finalPhone = phone.replace(/[^\d]/g, '').slice(-11);
+                    const whatsappLink = `https://wa.me/+88${finalPhone}?text=${encodedMessage}`;
+                    window.open(whatsappLink, '_blank');
+                 }
+             }
+         }
+
+         // Function for 6: Stock Low Owner Alert
+        window.sendStockAlertToOwner = (productName = 'Multiple', stock = 0) => {
+            const owner = users.find(u => u.role === 'admin');
+            if(!owner || !owner.phone || owner.phone.length < 5) { 
+                 alert('অ্যাডমিন ইউজারের ফোন নম্বর সেট করা নেই।');
+                 return;
+            }
+            
+            let data = [];
+            if (productName === 'Multiple') {
+                const lowStockProducts = products.filter(p => p.stock <= (p.minStock || window.SALES_FORECAST_CONFIG.PRODUCT_MIN_STOCK_DEFAULT));
+                data = lowStockProducts;
             } else {
-                 newBankData.currentBalance = openingBalance;
-                 banks.push(newBankData);
-                 await db.put('banks', newBankData);
-                 alert('নতুন ব্যাংক সফলভাবে যোগ করা হয়েছে!');
+                 data.push({ name: productName, stock: stock });
+            }
+
+            const alertMessage = generateAlertMessage('STOCK_LOW', owner.displayName, data);
+            const finalPhone = owner.phone.replace(/[^\d]/g, '').slice(-11);
+            const whatsappLink = `https://wa.me/+88${finalPhone}?text=${alertMessage}`; 
+            window.open(whatsappLink, '_blank');
+        }
+
+        
+        // ===================================
+        // 2. STOCK ALERT ADD-ON (stockAlert.js conceptual file)
+        // ===================================
+         function renderStockAlerts() {
+            // Use the product data from global array which is reloaded by initializeData
+            const lowStockProducts = products.filter(p => p.stock <= (p.minStock || window.SALES_FORECAST_CONFIG.PRODUCT_MIN_STOCK_DEFAULT));
+            const alertsList = document.getElementById('stock-alerts-list');
+            alertsList.innerHTML = '';
+            document.getElementById('low-stock-count').textContent = lowStockProducts.length;
+
+            if (lowStockProducts.length === 0) {
+                 alertsList.innerHTML = '<p>সব পণ্য পর্যাপ্ত পরিমাণে স্টকে আছে।</p>';
+                 return;
             }
             
-            await initializeData(); // Reload all to update UI and arrays
-            addBankFormContainer.style.display = 'none';
-        });
+            alertsList.innerHTML += `<h4 style="color: #fca5a5; margin: 0;"><i class="fas fa-box-open"></i> কম স্টক পণ্যের তালিকা:</h4>`;
 
-
-        function renderBankList() {
-            bankListTableBody.innerHTML = '';
-            
-            let totalBalance = 0;
-            banks.forEach(bank => {
-                const row = bankListTableBody.insertRow();
-                row.insertCell(0).textContent = bank.bankName;
-                row.insertCell(1).textContent = bank.accountNumber;
-                const balance = bank.currentBalance || 0;
-                totalBalance += balance;
-                const balanceCell = row.insertCell(2);
-                balanceCell.textContent = `৳ ${balance.toLocaleString()}`;
-                balanceCell.style.color = balance < 0 ? '#dc3545' : '#22c55e';
-                balanceCell.style.fontWeight = 'bold';
-
-                const actionCell = row.insertCell(3);
-                actionCell.className = 'table-action-buttons';
-                
-                const editBtn = document.createElement('button');
-                editBtn.innerHTML = '<i class="fas fa-edit"></i> সম্পাদনা';
-                editBtn.className = 'edit-btn';
-                editBtn.addEventListener('click', () => editBank(bank.id));
-                actionCell.appendChild(editBtn);
-
-                const deleteBtn = document.createElement('button');
-                deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i> মুছুন';
-                deleteBtn.className = 'danger-btn';
-                deleteBtn.addEventListener('click', () => deleteBank(bank.id));
-                actionCell.appendChild(deleteBtn);
+            const ul = document.createElement('ul');
+            lowStockProducts.forEach(p => {
+                const minStock = p.minStock || window.SALES_FORECAST_CONFIG.PRODUCT_MIN_STOCK_DEFAULT;
+                const li = document.createElement('li');
+                li.innerHTML = `⚠️ <span class="low-stock-product-name">${p.name}</span>: স্টক: ${p.stock} ${p.unit} | মিনিমাম: ${minStock}
+                    <button class="info-btn" style="float: right; padding: 4px 8px; margin: 0; font-size: 13px;" 
+                     onclick="window.sendStockAlertToOwner('${p.name}', ${p.stock});">অ্যাডমিনকে মেসেজ</button>`;
+                ul.appendChild(li);
             });
-
-            bankSectionTotalBalance.textContent = `৳ ${totalBalance.toLocaleString()}`;
-
-            let totalCredit = bankTransactions.filter(bt => bt.type === 'credit').reduce((sum, bt) => sum + bt.amount, 0);
-            let totalDebit = bankTransactions.filter(bt => bt.type === 'debit').reduce((sum, bt) => sum + bt.amount, 0);
-
-            bankSectionTotalCredit.textContent = `৳ ${totalCredit.toLocaleString()}`;
-            bankSectionTotalDebit.textContent = `৳ ${totalDebit.toLocaleString()}`;
+            alertsList.appendChild(ul);
         }
         
-        function editBank(id) {
-             const bank = banks.find(b => b.id === id);
-             if (bank) {
-                 addBankFormContainer.style.display = 'block';
-                 document.getElementById('bank-name').value = bank.bankName;
-                 document.getElementById('account-number').value = bank.accountNumber;
-                 document.getElementById('opening-balance').value = bank.openingBalance || 0;
-                 document.getElementById('opening-balance').disabled = true; // Opening balance cannot be changed on edit
-                 addBankForm.dataset.editingId = id;
-             }
-        }
-        
-        async function deleteBank(id) {
-             if (confirm('আপনি কি নিশ্চিত এই ব্যাংক অ্যাকাউন্টটি মুছে ফেলতে চান? এর সাথে সম্পর্কিত সকল লেনদেনও মুছে যাবে। এই কাজটি অপরিবর্তনীয়!')) {
-                 const dbPromises = [];
-                 dbPromises.push(db.delete('banks', id));
-                 // Delete associated transactions
-                 bankTransactions.filter(bt => bt.bankId === id).forEach(bt => dbPromises.push(db.delete('bankTransactions', bt.id)));
-                 await Promise.all(dbPromises);
-                 await initializeData();
-                 alert('ব্যাংক অ্যাকাউন্ট সফলভাবে মুছে ফেলা হয়েছে!');
-             }
-        }
-        
-        // --- Bank Transaction Logic ---
-        function populateBankTransactionFilters() {
-             // Already done in populateBankSelectors, but ensure the filter is updated
-             populateBankSelectors();
-        }
+        // ===================================
+        // 5. SALES FORECAST ADD-ON (forecast.js conceptual file)
+        // ===================================
+        function calculateAndRenderForecast() {
+            const today = moment();
+            const lastCompleteMonthStart = moment(today).startOf('month').subtract(1, 'month');
 
-        filterBankTransactionsBtn.addEventListener('click', renderBankTransactions);
-
-        function renderBankTransactions() {
-            const bankIdFilter = bankTransactionBankFilter.value;
-            const typeFilter = bankTransactionTypeFilter.value;
-            const tableBody = bankTransactionsTableBody;
-            tableBody.innerHTML = '';
-
-            let filteredTransactions = bankTransactions.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+            const monthData = [];
             
-            if (bankIdFilter) {
-                 filteredTransactions = filteredTransactions.filter(bt => bt.bankId === bankIdFilter);
-            }
-            if (typeFilter) {
-                 filteredTransactions = filteredTransactions.filter(bt => bt.type === typeFilter);
-            }
+            // Get data for the last 3 complete months for forecast base
+            for (let i = 0; i < 3; i++) {
+                const start = moment(lastCompleteMonthStart).subtract(i, 'month').startOf('month');
+                const end = moment(lastCompleteMonthStart).subtract(i, 'month').endOf('month');
 
-            let totalCredit = 0;
-            let totalDebit = 0;
+                // Filter sales for this month range
+                const monthSales = sales.filter(s => 
+                     moment(s.timestamp).isSameOrAfter(start) && 
+                     moment(s.timestamp).isSameOrBefore(end) && 
+                     s.type === 'sale'
+                );
+                
+                if (monthSales.length > 0) { 
+                     const totalSales = monthSales.reduce((sum, s) => sum + s.finalAmount, 0);
+                     // Assuming 'profit' is stored with the sale transaction
+                     const totalProfit = monthSales.reduce((sum, s) => sum + s.profit, 0);
 
-            if (filteredTransactions.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="6">কোনো ব্যাংক লেনদেন খুঁজে পাওয়া যায়নি।</td></tr>';
+                    monthData.push({
+                        month: start.format('YYYY-MM'),
+                        totalSales: totalSales,
+                        totalProfit: totalProfit
+                    });
+                }
+            }
+            
+            if (monthData.length < window.SALES_FORECAST_CONFIG.MIN_FORECAST_SALES) {
+                document.getElementById('forecast-basis').textContent = `(ডেটা অপ্রতুল: মাত্র ${monthData.length} মাস)`;
+                document.getElementById('forecast-next-month-sale').textContent = `৳ N/A`;
+                document.getElementById('forecast-next-month-profit').textContent = `৳ N/A`;
+                document.getElementById('forecast-top-product').textContent = `N/A`;
+                document.getElementById('forecast-trend-display').textContent = `N/A`;
                 return;
             }
-
-            filteredTransactions.forEach(bt => {
-                const row = tableBody.insertRow();
-                row.insertCell(0).textContent = moment(bt.timestamp).format('LLL');
-                row.insertCell(1).textContent = bt.bankName;
-                
-                let typeDisplay = '';
-                let amountDisplay = '';
-                
-                if (bt.type === 'credit') {
-                    typeDisplay = 'ডিপোজিট/ক্রেডিট';
-                    amountDisplay = `<span class="transaction-credit">+ ৳ ${bt.amount.toLocaleString()}</span>`;
-                    totalCredit += bt.amount;
-                } else if (bt.type === 'debit') {
-                    typeDisplay = 'উইথড্রয়াল/ডেবিট';
-                    amountDisplay = `<span class="transaction-debit">- ৳ ${bt.amount.toLocaleString()}</span>`;
-                    totalDebit += bt.amount;
-                }
-                
-                row.insertCell(2).textContent = typeDisplay;
-                row.insertCell(3).textContent = bt.description || 'N/A';
-                row.insertCell(4).innerHTML = amountDisplay;
-
-                const actionCell = row.insertCell(5);
-                actionCell.className = 'table-action-buttons';
-                
-                // Only allow deletion of non-system generated entries
-                if (!['sale_income', 'due_collection', 'supplier_payment', 'expense_withdrawal', 'ledger_transfer'].includes(bt.refType)) {
-                     const deleteBtn = document.createElement('button');
-                     deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i> মুছুন';
-                     deleteBtn.className = 'danger-btn';
-                     deleteBtn.addEventListener('click', () => deleteBankTransaction(bt.id));
-                     actionCell.appendChild(deleteBtn);
-                } else {
-                    actionCell.textContent = 'স্বয়ংক্রিয়';
-                }
-            });
             
-             // Render the totals
-             const totalRow = tableBody.insertRow();
-             totalRow.style.fontWeight = 'bold';
-             totalRow.insertCell(0).colSpan = 3;
-             totalRow.insertCell(0).textContent = 'মোট যোগফল:';
-             totalRow.insertCell(1).textContent = `ক্রেডিট: ৳ ${totalCredit.toLocaleString()} | ডেবিট: ৳ ${totalDebit.toLocaleString()}`;
-             const netChange = totalCredit - totalDebit;
-             const netChangeCell = totalRow.insertCell(2);
-             netChangeCell.colSpan = 2;
-             netChangeCell.innerHTML = `নেট পরিবর্তন: <span style="color: ${netChange < 0 ? '#dc3545' : '#22c55e'};">৳ ${netChange.toLocaleString()}</span>`;
+            // Sort to ensure reverse chronological (Month 1 is newest, Month 3 is oldest)
+            monthData.sort((a,b) => moment(b.month).unix() - moment(a.month).unix()); 
 
-        }
+            // Get average of last 3 months
+            const salesSum = monthData.reduce((sum, m) => sum + m.totalSales, 0);
+            const profitSum = monthData.reduce((sum, m) => sum + m.totalProfit, 0);
+            const avgSale = salesSum / 3;
+            const avgProfit = profitSum / 3;
 
-        async function deleteBankTransaction(id) {
-             const bt = bankTransactions.find(bt => bt.id === id);
-             if (!bt || ['sale_income', 'due_collection', 'supplier_payment', 'expense_withdrawal', 'ledger_transfer'].includes(bt.refType)) {
-                 alert('এই লেনদেনটি সিস্টেম থেকে তৈরি, ম্যানুয়ালি মুছে ফেলা যাবে না।');
-                 return;
-             }
-             
-             if (confirm('আপনি কি নিশ্চিত এই লেনদেনটি মুছে ফেলতে চান? এতে ব্যাংকের ব্যালেন্স পরিবর্তিত হবে।')) {
-                 const bank = banks.find(b => b.id === bt.bankId);
-                 if (bank) {
-                      // Reverse the transaction effect
-                     bank.currentBalance += (bt.type === 'debit' ? bt.amount : -bt.amount);
-                     await db.put('banks', bank);
-                 }
+            // Calculate overall trend from the average change between two 3-month blocks (simple change: M1 vs Avg of M2/M3)
+            const latestMonthSale = monthData[0].totalSales;
+            const oldMonthsAvgSale = (monthData[1].totalSales + monthData[2].totalSales) / 2;
+            const trendAbsolute = latestMonthSale - oldMonthsAvgSale;
+            
+            let trendFactor = 0;
+            // Only apply a trend if the last month's deviation is significant (5%) of the average sales
+            if (avgSale > 0 && Math.abs(trendAbsolute / avgSale) > window.SALES_FORECAST_CONFIG.TREND_THRESHOLD) {
+                trendFactor = trendAbsolute;
+            } 
+            
+            // Add or subtract the simple monthly trend plus the overall predefined safety modifier 
+            const trendChangeRate = trendFactor / avgSale; // E.g. +0.10 for a 10% upward trend
+            
+            const nextMonthForecastSale = Math.max(0, avgSale + (avgSale * trendChangeRate) + (avgSale * window.SALES_FORECAST_CONFIG.TREND_MODIFIER * (trendChangeRate >= 0 ? 1 : -1)));
 
-                 await db.delete('bankTransactions', id);
-                 await initializeData();
-                 alert('লেনদেন সফলভাবে মুছে ফেলা হয়েছে!');
-             }
-        }
-        
-        // --- Expense Module Core Functions ---
+            const salesChangeRatio = nextMonthForecastSale / avgSale;
+            const nextMonthForecastProfit = avgProfit * salesChangeRatio;
 
-        function renderExpenseCategories() {
-             const categories = shopSettings.expenseCategories;
-             const expenseCatSelects = [expenseCategorySelect, expenseFilterCategory];
-             
-             expenseCatSelects.forEach(select => {
-                 const currentValue = select.value;
-                 select.innerHTML = select === expenseFilterCategory ? '<option value="">সকল</option>' : '';
-                 
-                 for (const key in categories) {
-                     const option = document.createElement('option');
-                     option.value = key;
-                     option.textContent = categories[key];
-                     select.appendChild(option);
-                 }
-                 if (currentValue && select.querySelector(`option[value="${currentValue}"]`)) {
-                    select.value = currentValue;
-                 }
-             });
-        }
-        
-        addExpenseCategoryBtn.addEventListener('click', async () => {
-             const newCategoryName = prompt(`নতুন খরচের ক্যাটাগরির নাম লিখুন:`);
+            // Find estimated Top Product
+            const topMonth = monthData[0].month;
+            const topMonthSales = sales.filter(s => moment(s.timestamp).format('YYYY-MM') === topMonth && s.type === 'sale');
+            const productCounts = {};
+            topMonthSales.forEach(s => s.items.forEach(item => {
+                 productCounts[item.name] = (productCounts[item.name] || 0) + item.quantity;
+            }));
+            const topProduct = Object.entries(productCounts).sort(([, a], [, b]) => b - a)[0];
+            
+            // Render UI
+            const trendDisplayValue = ((nextMonthForecastSale - avgSale) / avgSale * 100).toFixed(1);
 
-             if (newCategoryName && newCategoryName.trim() !== '') {
-                 const newCategoryKey = newCategoryName.trim().toLowerCase().replace(/\s+/g, '_');
-                 if (shopSettings.expenseCategories[newCategoryKey]) {
-                     alert('এই ক্যাটাগরিটি আগে থেকেই আছে।');
-                     return;
-                 }
-                 shopSettings.expenseCategories[newCategoryKey] = newCategoryName.trim();
-                 await db.put('settings', shopSettings);
-                 alert('ক্যাটাগরি সফলভাবে যোগ করা হয়েছে!');
-                 renderExpenseCategories();
-             }
-        });
-
-        expenseSourceSelect.addEventListener('change', (e) => {
-             const source = e.target.value;
-             if (source === 'bank_withdrawal' || source === 'other_bank') {
-                 expenseBankFields.style.display = 'block';
-                 expenseBankIdSelect.setAttribute('required', 'required');
-             } else {
-                 expenseBankFields.style.display = 'none';
-                 expenseBankIdSelect.removeAttribute('required');
-             }
-        });
-
-        addExpenseForm.addEventListener('submit', async (e) => {
-             e.preventDefault();
-             const category = expenseCategorySelect.value;
-             const source = expenseSourceSelect.value;
-             const bankId = expenseBankIdSelect.value;
-             const amount = parseFloat(expenseAmountInput.value);
-             const date = expenseDateInput.value;
-             const note = expenseNoteTextarea.value.trim();
-
-             if (isNaN(amount) || amount <= 0) {
-                 alert('বৈধ পরিমাণ প্রবেশ করান।');
-                 return;
-             }
-             if ((source === 'bank_withdrawal' || source === 'other_bank') && !bankId) {
-                 alert('ব্যাংক উৎস হলে ব্যাংক নির্বাচন আবশ্যক।');
-                 return;
-             }
-
-             const expenseId = generateUniqueId('EXP');
-             const dbPromises = [];
-             
-             // 1. Create Expense Record
-             const newExpense = {
-                 id: expenseId,
-                 timestamp: new Date(date).toISOString(),
-                 category,
-                 source,
-                 bankId: source !== 'cash' ? bankId : null,
-                 amount,
-                 note
-             };
-             expenses.push(newExpense);
-             dbPromises.push(db.put('expenses', newExpense));
-
-             // 2. Update Source (Ledger/Bank)
-             if (source === 'cash') {
-                 // Rule 1: Cash Expense (Ledger Expense)
-                 const newLedgerEntry = {
-                     id: generateUniqueId('L'), timestamp: new Date(date).toISOString(), type: 'expense',
-                     category: 'cash_expense', description: `সাধারণ ক্যাশ খরচ: ${shopSettings.expenseCategories[category] || category} - ${note}`,
-                     amount: amount, refId: expenseId, refType: 'expense_cash'
+            document.getElementById('forecast-basis').textContent = `(গত ${monthData.length} মাসের গড়)`
+            document.getElementById('forecast-next-month-sale').textContent = `৳ ${Math.round(nextMonthForecastSale).toLocaleString()}`;
+            document.getElementById('forecast-next-month-profit').textContent = `৳ ${Math.round(nextMonthForecastProfit).toLocaleString()}`;
+            document.getElementById('forecast-top-product').textContent = topProduct ? topProduct[0] : 'N/A';
+            document.getElementById('forecast-trend-display').textContent = trendDisplayValue > 0 ? `+${trendDisplayValue}%` : `${trendDisplayValue}%`;
+            document.getElementById('forecast-trend-display').style.color = nextMonthForecastSale >= avgSale ? '#22c55e' : '#dc3545';
+            
+             // 6. Alert System: Trigger for owner
+             const owner = users.find(u => u.role === 'admin');
+             if(owner && owner.phone) {
+                 const alertData = { 
+                    sale: Math.round(nextMonthForecastSale), 
+                    profit: Math.round(nextMonthForecastProfit),
+                    topProduct: topProduct ? topProduct[0] : 'N/A',
+                    trend: trendDisplayValue + '%'
                  };
-                 ledgerEntries.push(newLedgerEntry);
-                 dbPromises.push(db.put('ledgerEntries', newLedgerEntry));
-             } else if (source === 'bank_withdrawal' || source === 'other_bank') {
-                 // Rule 4/5: Bank Withdrawal / Other Bank Payment (Bank Debit, Expense Created)
-                 const bank = banks.find(b => b.id === bankId);
-                 if (bank) {
-                     bank.currentBalance -= amount;
-                     dbPromises.push(db.put('banks', bank));
-                     
-                     const isWithdrawal = source === 'bank_withdrawal';
-                     
-                     const newBankTransaction = {
-                         id: generateUniqueId('BT'),
-                         timestamp: new Date(date).toISOString(),
-                         bankId: bank.id,
-                         bankName: bank.name,
-                         type: 'debit', 
-                         amount: amount,
-                         description: isWithdrawal ? `Bank Withdrawal for Expense: ${shopSettings.expenseCategories[category] || category}` : `Other Bank Payment: ${shopSettings.expenseCategories[category] || category}`,
-                         refId: expenseId,
-                         refType: isWithdrawal ? 'expense_withdrawal' : 'expense_bank'
-                     };
-                     bankTransactions.push(newBankTransaction);
-                     dbPromises.push(db.put('bankTransactions', newBankTransaction));
-                 }
+                 // Note: Ideally, this notification should be sent *once* per month. Since this is in the main loop, it will only log:
+                 console.log(`Forecast Ready - Owner Alert (Needs Monthly Trigger): ${generateAlertMessage('FORECAST_READY', owner.displayName, alertData)}`);
              }
+        }
 
-             await Promise.all(dbPromises);
-             await initializeData();
-
-             alert('খরচ সফলভাবে যোগ করা হয়েছে!');
-             addExpenseForm.reset();
-             expenseDateInput.value = new Date().toISOString().split('T')[0];
+        
+         // ===================================
+         // 4. SALES & PROFIT REPORT ADD-ON (report.js conceptual file)
+         // (Includes Product Wise Report & Granular Report)
+         // ===================================
+         
+        // 4. Product Wise Report Listener
+        productWiseReportBtn.addEventListener('click', () => {
+             // Sync the dates with the main Sales Report dates by default
+             const today = salesReportFromDateInput.value; 
+             document.getElementById('product-report-from-date').value = today;
+             document.getElementById('product-report-to-date').value = salesReportToDateInput.value;
+             populateProductReportCategoryFilter();
+             renderProductWiseReport();
+             document.getElementById('product-wise-report-modal').style.display = 'flex';
         });
 
+         document.querySelector('#product-wise-report-modal .close-button').addEventListener('click', () => {
+             document.getElementById('product-wise-report-modal').style.display = 'none';
+        });
 
-        // --- Bank to Ledger Transfer (Cash In) Logic ---
-        bankToLedgerTransferForm.addEventListener('submit', async (e) => {
-             e.preventDefault();
-             const bankId = transferBankId.value;
-             const amount = parseFloat(transferAmount.value);
-             const date = transferDate.value;
-             const note = transferNote.value.trim();
+        document.getElementById('filter-product-wise-report').addEventListener('click', renderProductWiseReport);
 
-             if (!bankId || isNaN(amount) || amount <= 0 || !date) {
-                 alert('অনুগ্রহ করে বৈধ তথ্য দিন।');
+        function populateProductReportCategoryFilter() {
+            // Get categories from live product list
+            const categories = [...new Set(products.map(p => p.category).filter(Boolean))];
+            const filterEl = document.getElementById('product-report-category-filter');
+            filterEl.innerHTML = '<option value="">সকল ক্যাটাগরি</option>';
+            categories.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat;
+                option.textContent = cat;
+                filterEl.appendChild(option);
+            });
+        }
+
+        function renderProductWiseReport() {
+            // Check if admin to show profit data (already done in main sales report but check again)
+             if (currentUser && currentUser.role !== 'admin') { 
+                 alert('লাভ/ক্ষতির রিপোর্ট দেখার অনুমতি আপনার নেই।');
+                 document.getElementById('product-wise-report-modal').style.display = 'none';
                  return;
-             }
+            }
 
-             const dbPromises = [];
-             
-             // 1. Bank Debit
-             const bank = banks.find(b => b.id === bankId);
-             if (bank) {
-                 bank.currentBalance -= amount;
-                 dbPromises.push(db.put('banks', bank));
-                 
-                 const btId = generateUniqueId('BT');
-                 const newBankTransaction = {
-                     id: btId,
-                     timestamp: new Date(date).toISOString(),
-                     bankId: bank.id,
-                     bankName: bank.name,
-                     type: 'debit', 
-                     amount: amount,
-                     description: `Transfer to Cash Ledger - ${note}`,
-                     refId: btId,
-                     refType: 'ledger_transfer_out' // Specific type for audit
-                 };
-                 bankTransactions.push(newBankTransaction);
-                 dbPromises.push(db.put('bankTransactions', newBankTransaction));
-             }
-
-             // 2. Ledger Credit (Cash In)
-             const newLedgerEntry = {
-                 id: generateUniqueId('L'), timestamp: new Date(date).toISOString(), type: 'income',
-                 category: 'bank_to_ledger_transfer', description: `ব্যাংক থেকে ক্যাশ ট্রান্সফার (Source: ${bank.bankName}) - ${note}`,
-                 amount: amount, refId: bankId, refType: 'bank_to_ledger_transfer'
-             };
-             ledgerEntries.push(newLedgerEntry);
-             dbPromises.push(db.put('ledgerEntries', newLedgerEntry));
-
-             await Promise.all(dbPromises);
-             await initializeData();
-
-             alert(`৳ ${amount.toLocaleString()} সফলভাবে ক্যাশে ট্রান্সফার করা হয়েছে!`);
-             bankToLedgerTransferForm.reset();
-             transferDate.value = new Date().toISOString().split('T')[0];
-        });
-
-
-        // --- Expense Report Logic ---
-        filterExpensesBtn.addEventListener('click', renderExpenses);
-
-        function renderExpenses() {
-            const fromDateStr = expenseFilterFromDate.value;
-            const toDateStr = expenseFilterToDate.value;
-            const categoryFilter = expenseFilterCategory.value;
-            const tableBody = expensesTableBody;
+            const fromDateStr = document.getElementById('product-report-from-date').value;
+            const toDateStr = document.getElementById('product-report-to-date').value;
+            const categoryFilter = document.getElementById('product-report-category-filter').value;
+            const tableBody = document.querySelector('#product-wise-report-table tbody');
             tableBody.innerHTML = '';
             
             const fromDate = fromDateStr ? moment(fromDateStr).startOf('day') : null;
             const toDate = toDateStr ? moment(toDateStr).endOf('day') : null;
-            
-            let filteredExpenses = expenses.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
 
-            if (fromDate || toDate) {
-                filteredExpenses = filteredExpenses.filter(e => {
-                     const eDate = moment(e.timestamp);
-                     return (!fromDate || eDate.isSameOrAfter(fromDate)) && (!toDate || eDate.isSameOrBefore(toDate));
-                });
-            }
-            if (categoryFilter) {
-                 filteredExpenses = filteredExpenses.filter(e => e.category === categoryFilter);
-            }
+            const productSummary = {};
+            let totalNetSale = 0;
+            let totalNetProfit = 0;
+            let totalNetQty = 0;
 
-            let totalExpense = 0;
-            let totalBankWithdrawal = 0;
-            let totalCash = 0;
+            sales.filter(s => s.type === 'sale').forEach(sale => {
+                 const saleDate = moment(sale.timestamp);
+                 if ((fromDate && saleDate.isBefore(fromDate)) || (toDate && saleDate.isAfter(toDate))) return;
 
-            if (filteredExpenses.length === 0) {
-                 tableBody.innerHTML = '<tr><td colspan="6">কোনো খরচ খুঁজে পাওয়া যায়নি।</td></tr>';
-                 totalFilteredExpenses.textContent = '৳ 0';
-                 totalBankWithdrawalExpense.textContent = '৳ 0';
-                 totalCashExpense.textContent = '৳ 0';
-                 return;
-            }
+                 sale.items.forEach(item => {
+                    const product = products.find(p => p.id === item.productId);
+                    if (!product) return; 
 
-            filteredExpenses.forEach(e => {
-                totalExpense += e.amount;
-                
-                const row = tableBody.insertRow();
-                row.insertCell(0).textContent = moment(e.timestamp).format('L');
-                row.insertCell(1).textContent = shopSettings.expenseCategories[e.category] || e.category;
-                
-                let sourceDisplay = '';
-                if (e.source === 'cash') {
-                    sourceDisplay = 'নগদ (Cash)';
-                    totalCash += e.amount;
-                } else if (e.source === 'bank_withdrawal') {
-                    sourceDisplay = `ব্যাংক উইথড্রয়াল (${banks.find(b => b.id === e.bankId)?.bankName || 'N/A'})`;
-                    totalBankWithdrawal += e.amount;
-                } else if (e.source === 'other_bank') {
-                    sourceDisplay = `ব্যাংক পেমেন্ট (${banks.find(b => b.id === e.bankId)?.bankName || 'N/A'})`;
-                    totalBankWithdrawal += e.amount;
-                }
-                
-                row.insertCell(2).textContent = sourceDisplay;
-                row.insertCell(3).textContent = e.note;
-                row.insertCell(4).textContent = `৳ ${e.amount.toLocaleString()}`;
-                
-                const actionCell = row.insertCell(5);
-                const deleteBtn = document.createElement('button');
-                deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i> মুছুন';
-                deleteBtn.className = 'danger-btn';
-                deleteBtn.addEventListener('click', () => deleteExpense(e.id));
-                actionCell.appendChild(deleteBtn);
+                     if (categoryFilter && product.category !== categoryFilter) return;
+
+                    if (!productSummary[product.id]) {
+                        productSummary[product.id] = {
+                            name: product.name,
+                            category: product.category,
+                            qty: 0,
+                            totalSale: 0,
+                            totalCost: 0,
+                            profit: 0
+                        };
+                    }
+                    // Profit is based on unitPrice and item.purchasePrice which is logged with the sale/cart item
+                    const saleValue = item.quantity * item.unitPrice;
+                    const costValue = item.quantity * (item.purchasePrice || 0);
+
+                    productSummary[product.id].qty += item.quantity;
+                    productSummary[product.id].totalSale += saleValue;
+                    productSummary[product.id].totalCost += costValue;
+                    productSummary[product.id].profit += (saleValue - costValue);
+                 });
             });
 
-            totalFilteredExpenses.textContent = `৳ ${totalExpense.toLocaleString()}`;
-            totalBankWithdrawalExpense.textContent = `৳ ${totalBankWithdrawal.toLocaleString()}`;
-            totalCashExpense.textContent = `৳ ${totalCash.toLocaleString()}`;
-        }
-
-        async function deleteExpense(id) {
-             const expenseToDelete = expenses.find(e => e.id === id);
-             if (!expenseToDelete) return;
-             
-             if (!confirm('আপনি কি নিশ্চিত এই খরচটি মুছে ফেলতে চান? এতে ক্যাশ/ব্যাংক ব্যালেন্স সমন্বয় হবে।')) {
-                 return;
-             }
-             
-             const dbPromises = [];
-             
-             // 1. Delete Ledger/Bank Transaction entry
-             if (expenseToDelete.source === 'cash') {
-                 const ledgerEntry = ledgerEntries.find(l => l.refId === expenseToDelete.id && l.refType === 'expense_cash');
-                 if (ledgerEntry) dbPromises.push(db.delete('ledgerEntries', ledgerEntry.id));
-             } else if (expenseToDelete.bankId) {
-                 const bankTransaction = bankTransactions.find(bt => bt.refId === expenseToDelete.id);
-                 if (bankTransaction) dbPromises.push(db.delete('bankTransactions', bankTransaction.id));
-                 
-                 // 2. Reverse Bank Balance
-                 const bank = banks.find(b => b.id === expenseToDelete.bankId);
-                 if (bank) {
-                     bank.currentBalance += expenseToDelete.amount;
-                     dbPromises.push(db.put('banks', bank));
-                 }
+            // Convert summary to array and render
+            Object.values(productSummary).forEach(summary => {
+                const row = tableBody.insertRow();
+                
+                row.insertCell(0).textContent = summary.name;
+                row.insertCell(1).textContent = summary.category;
+                row.insertCell(2).textContent = summary.qty;
+                row.insertCell(3).textContent = `৳ ${summary.totalSale.toLocaleString()}`;
+                row.insertCell(4).textContent = `৳ ${summary.totalCost.toLocaleString()}`;
+                const profitCell = row.insertCell(5);
+                profitCell.textContent = `৳ ${summary.profit.toLocaleString()}`;
+                profitCell.style.color = summary.profit < 0 ? '#dc3545' : '#22c55e';
+                
+                totalNetSale += summary.totalSale;
+                totalNetProfit += summary.profit;
+                totalNetQty += summary.qty;
+            });
+            
+             if (Object.keys(productSummary).length === 0) {
+                 const row = tableBody.insertRow();
+                 row.insertCell(0).colSpan = 6;
+                 row.insertCell(0).textContent = 'এই সময়সীমার মধ্যে কোনো পণ্য বিক্রি হয়নি।';
              }
 
-             // 3. Delete Expense Record
-             dbPromises.push(db.delete('expenses', expenseToDelete.id));
-
-             await Promise.all(dbPromises);
-             await initializeData();
-             alert('খরচ সফলভাবে মুছে ফেলা হয়েছে!');
+            // Update Summary
+            document.getElementById('prod-report-total-sale').textContent = `৳ ${totalNetSale.toLocaleString()}`;
+            document.getElementById('prod-report-total-profit').textContent = `৳ ${totalNetProfit.toLocaleString()}`;
+            document.getElementById('prod-report-total-qty').textContent = `${totalNetQty.toLocaleString()} পিস`;
+            document.getElementById('prod-report-total-profit').style.color = totalNetProfit < 0 ? '#dc3545' : '#22c55e';
         }
-
-        // Print Expense Report
-        document.getElementById('print-expenses').addEventListener('click', () => {
-             const fromDateStr = expenseFilterFromDate.value;
-             const toDateStr = expenseFilterToDate.value;
-             const logoHtml = shopSettings.logoUrl ? `<div class="center"><img src="${shopSettings.logoUrl}" alt="Logo" style="max-height: 80px; max-width: 200px; margin-bottom: 10px;"></div>` : '';
+        
+        // Product Wise Print Handler
+        document.getElementById('print-product-wise-report').addEventListener('click', () => {
+             const fromDate = document.getElementById('product-report-from-date').value;
+             const toDate = document.getElementById('product-report-to-date').value;
              
-             const summaryHtml = document.getElementById('expenses-section').querySelector('.ledger-summary').innerHTML;
-             const tableHtml = document.getElementById('expenses-table').outerHTML;
-
-             let printContent = `
-                 ${logoHtml}
-                <h3 class="center">খরচ রিপোর্ট</h3>
-                <p class="center">${shopSettings.name}</p>
-                <p class="center">তারিখ: ${fromDateStr ? moment(fromDateStr).format('LL') : 'শুরু'} থেকে ${toDateStr ? moment(toDateStr).format('LL') : 'আজ'}</p>
-                <hr>
-                ${summaryHtml}
-                <hr>
-                ${tableHtml}
-             `;
-             launchPrint('খরচ রিপোর্ট', printContent);
+             const printContent = `
+                <h3 class='center'>পণ্য-ভিত্তিক বিক্রয় ও লাভ রিপোর্ট</h3>
+                 <p class='center'>${fromDate} থেকে ${toDate}</p>
+                 <hr>
+                ${document.getElementById('product-report-summary').outerHTML.replace('৳ 0', document.getElementById('prod-report-total-sale').textContent)}
+                 <hr>
+                ${document.getElementById('product-wise-report-table').outerHTML}
+            `;
+            launchPrint('পণ্য-ভিত্তিক রিপোর্ট', printContent);
         });
 
+         // 4. Granular Report - New UI/Function for Daily/Monthly/Yearly
+        document.getElementById('filter-granular-report').addEventListener('click', renderGranularReport);
 
-        // --- End of NEW ADD-ON MODULES ---
+        function renderGranularReport() {
+            // Check if admin to show profit data (already done in main sales report but check again)
+             if (currentUser && currentUser.role !== 'admin') { 
+                 alert('লাভ/ক্ষতির রিপোর্ট দেখার অনুমতি আপনার নেই।');
+                 return;
+            }
+             
+            const fromDateStr = granularReportFromDateInput.value;
+            const toDateStr = granularReportToDateInput.value;
+            const reportType = document.getElementById('granular-report-type').value;
+            const tableBody = document.querySelector('#granular-report-table tbody');
+            const summaryDiv = document.getElementById('granular-report-summary');
+            tableBody.innerHTML = '';
+            summaryDiv.innerHTML = '';
+            document.getElementById('granular-report-title').textContent = `${fromDateStr} থেকে ${toDateStr}`;
+            
+            const fromDate = fromDateStr ? moment(fromDateStr).startOf('day') : moment(0);
+            const toDate = toDateStr ? moment(toDateStr).endOf('day') : moment();
+
+            const groupedReports = {};
+            let totalAllSale = 0;
+            let totalAllCost = 0;
+            let totalAllProfit = 0;
+
+             // 1. Group sales based on Report Type (daily/monthly/yearly)
+            sales.filter(s => s.type === 'sale' || s.type === 'return').forEach(transaction => {
+                const isSale = transaction.type === 'sale';
+                const modifier = isSale ? 1 : -1;
+
+                const saleDate = moment(transaction.timestamp);
+                if (saleDate.isBefore(fromDate) || saleDate.isAfter(toDate)) return;
+
+                let groupKey = '';
+                if (reportType === 'daily') {
+                    groupKey = saleDate.format('YYYY-MM-DD');
+                } else if (reportType === 'monthly') {
+                    groupKey = saleDate.format('YYYY-MM');
+                } else if (reportType === 'yearly') {
+                    groupKey = saleDate.format('YYYY');
+                }
+
+                if (!groupedReports[groupKey]) {
+                    groupedReports[groupKey] = { sales: 0, cost: 0, profit: 0 };
+                }
+
+                // Cost and Profit calculated from sale metadata
+                const saleCost = transaction.items.reduce((sum, item) => sum + (item.quantity * (item.purchasePrice || 0)), 0);
+                const netProfit = transaction.finalAmount - saleCost;
+                
+                groupedReports[groupKey].sales += (transaction.finalAmount * modifier);
+                groupedReports[groupKey].cost += (saleCost * modifier);
+                groupedReports[groupKey].profit += (transaction.profit || netProfit) * modifier;
+                
+                totalAllSale += (transaction.finalAmount * modifier);
+                totalAllCost += (saleCost * modifier);
+                totalAllProfit += (transaction.profit || netProfit) * modifier; // Should use recorded profit for accuracy
+            });
+            
+             // 2. Render and Sort
+            Object.entries(groupedReports).sort(([keyA], [keyB]) => moment(keyB) - moment(keyA)).forEach(([key, data]) => {
+                const profitMargin = data.sales > 0 ? ((data.profit / data.sales) * 100).toFixed(2) : '0.00';
+                
+                 // Localize the group key for rendering
+                let keyDisplay = key;
+                if (reportType === 'daily') keyDisplay = moment(key).format('LL');
+                if (reportType === 'monthly') keyDisplay = moment(key).format('MMMM, YYYY');
+                if (reportType === 'yearly') keyDisplay = key;
+                
+                const row = tableBody.insertRow();
+                row.insertCell(0).textContent = keyDisplay;
+                row.insertCell(1).textContent = `৳ ${data.sales.toLocaleString()}`;
+                row.insertCell(2).textContent = `৳ ${data.cost.toLocaleString()}`;
+                const profitCell = row.insertCell(3);
+                profitCell.textContent = `৳ ${data.profit.toLocaleString()}`;
+                profitCell.style.color = data.profit < 0 ? '#dc3545' : '#22c55e';
+                row.insertCell(4).textContent = `${profitMargin} %`;
+            });
+            
+             // 3. Render Grand Summary
+            const totalProfitMargin = totalAllSale > 0 ? ((totalAllProfit / totalAllSale) * 100).toFixed(2) : '0.00';
+             summaryDiv.innerHTML = `
+                 <p style="font-size: 1.1em; font-weight: bold; margin-bottom: 5px;">
+                    মোট নিট বিক্রয়: ৳ ${totalAllSale.toLocaleString()} |
+                    মোট নিট ক্রয় মূল্য: ৳ ${totalAllCost.toLocaleString()} |
+                    মোট লাভ: <span style="color: ${totalAllProfit < 0 ? '#dc3545' : '#22c55e'};">৳ ${totalAllProfit.toLocaleString()}</span>
+                 </p>
+                 <p style="font-size: 1.1em;">মোট লাভ শতাংশ: ${totalProfitMargin} %</p>
+            `;
+
+            if (Object.keys(groupedReports).length === 0) {
+                 const row = tableBody.insertRow();
+                 row.insertCell(0).colSpan = 5;
+                 row.insertCell(0).textContent = 'এই সময়সীমার মধ্যে কোনো লেনদেন হয়নি।';
+             }
+        }
+
+        document.getElementById('print-granular-report-btn').addEventListener('click', () => {
+             // Clones the table, adds totals, and calls the launchPrint utility
+             const logoHtml = shopSettings.logoUrl ? `<div class="center"><img src="${shopSettings.logoUrl}" alt="Logo" style="max-height: 80px; max-width: 200px; margin-bottom: 10px;"></div>` : '';
+
+            const printContent = `
+                ${logoHtml}
+                <h3 class='center'>উন্নত বিক্রয় ও লাভ রিপোর্ট (${document.getElementById('granular-report-title').textContent})</h3>
+                 <p class='center'>${document.getElementById('granular-report-summary').innerHTML.replace(/<span.*span>/g, '')}</p>
+                 <hr>
+                ${document.getElementById('granular-report-table').outerHTML}
+            `;
+            launchPrint('উন্নত বিক্রয় রিপোর্ট', printContent);
+        });
+        
+        // --- End of ADD-ON MODULES ---
 
         // --- Main Event Listeners (Original) ---
         loginForm.addEventListener('submit', handleLogin);
@@ -8748,9 +8070,6 @@
              granularReportToDateInput.value = today;
              // Set default manual due date
              manualDueDate.value = today;
-             // Set default expense date
-             expenseDateInput.value = today;
-             transferDate.value = today;
              
              // Ensure offline bar is visible if truly offline on load
              if (!navigator.onLine) {
