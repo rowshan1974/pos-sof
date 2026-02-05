@@ -287,7 +287,7 @@
             --light-blue: #3b82f6;   /* Lighter Bright Blue */
             --dark-blue: #1d4ed8;    /* Darker Bright Blue */
             --text-dark: #e5e7eb;    /* Light Gray for text */
-            --text-light: #f9fafb;   /* Very Light Gray */
+            --text-light: #f9fafb; /* Very Light Gray */
             --bg-light: #0f172a;     /* Dark Slate Blue background */
             --card-bg: #1e293b;      /* Slightly lighter slate for cards */
             --border-color: #334155; /* Slate border color */
@@ -2436,6 +2436,11 @@
             <section id="customer-management-section" class="app-section">
                 <h2><i class="fas fa-users"></i> কাস্টমার ব্যবস্থাপনা</h2>
                 <button id="add-customer-btn" class="primary-btn"><i class="fas fa-user-plus"></i> নতুন কাস্টমার যোগ করুন</button>
+                <!-- NEW: Search Input for Customer Management -->
+                 <div class="product-filters" style="margin-top: 20px;">
+                    <input type="text" id="customer-management-search-input" placeholder="কাস্টমারের নাম বা মোবাইল নম্বর দিয়ে খুঁজুন...">
+                </div>
+                <!-- END NEW: Search Input for Customer Management -->
                 <div id="add-customer-form-container" style="display:none;" class="app-section">
                     <h3><i class="fas fa-user-edit"></i> কাস্টমার যোগ/সম্পাদনা</h3>
                     <form id="add-customer-form">
@@ -2938,7 +2943,7 @@
 
             return `
                 <div class="single-barcode-label" style="text-align: center; line-height: 1.2; box-sizing: border-box; width: 40mm; height: 25mm; margin: 0; padding: 2px; page-break-inside: avoid; display: block;">
-                    <div style="font-size: 7px; font-weight: bold; margin-bottom: 1px; color: black !important;">${shopSettings.name.substring(0, 20)}</div>
+                    <div style="font-size: 7px; font-weight: bold; margin-bottom: 1px; color: black !important;">${shopSettings.name.substring(0, 15)}</div>
                     ${logoHtml}
                     <div style="font-size: 8px; font-weight: bold; margin: 1px 0; color: black !important;">${product.name.substring(0, 15)}</div>
                     <div style="font-size: 7px; color: black !important;">৳ ${product.price.toLocaleString()}</div>
@@ -3166,6 +3171,7 @@
         const customerLedgerModal = document.getElementById('customer-ledger-modal');
         const printCustomerLedgerBtn = document.getElementById('print-customer-ledger-btn');
         const filterCustomerLedgerBtn = document.getElementById('filter-customer-ledger-btn');
+        const customerManagementSearchInput = document.getElementById('customer-management-search-input'); // NEW REFERENCE
 
         // POS Section Elements
         const posCustomerPhoneInput = document.getElementById('pos-customer-phone');
@@ -3510,6 +3516,7 @@
                 customerSearchResultsDiv.style.display = 'none';
                 customerPurchaseHistoryDetails.style.display = 'none';
             } else if(sectionId === 'customer-management') {
+                customerManagementSearchInput.value = '';
                 renderCustomerList();
             } else if (sectionId === 'users') {
                 renderUserList();
@@ -4212,7 +4219,7 @@
             } else if (paymentMethod === 'bank') {
                  // Rule 4: Bank transaction goes to Bank Module (Debit)
                  selectedBank.currentBalance -= paymentAmount;
-                 dbPromises.push(db.put('banks', selectedBank));
+                 dbPromises.push(db.put('banks', selectedBank)); // <--- FIXED: Persist bank balance
                  
                  const newBankTx = {
                      id: generateUniqueId('BTX'), timestamp: new Date().toISOString(), bankId: selectedBank.id,
@@ -4221,6 +4228,10 @@
                  };
                  bankTransactions.push(newBankTx);
                  dbPromises.push(db.put('bankTransactions', newBankTx));
+                 
+                 // Manually update local banks array
+                 const bankIndex = banks.findIndex(b => b.id === selectedBank.id);
+                 if(bankIndex !== -1) banks[bankIndex] = selectedBank; // <--- FIXED: Local array update
                  
                  // Note: newLedgerEntry is NOT added to Ledger
             }
@@ -4231,10 +4242,6 @@
             const supplierIndex = suppliers.findIndex(s => s.id === currentSupplierForPayment.id);
             if(supplierIndex !== -1) {
                 suppliers[supplierIndex] = currentSupplierForPayment;
-            }
-            if(selectedBank) {
-                const bankIndex = banks.findIndex(b => b.id === selectedBank.id);
-                if(bankIndex !== -1) banks[bankIndex] = selectedBank;
             }
 
             alert('সাপ্লায়ার পেমেন্ট সফলভাবে রেকর্ড করা হয়েছে!');
@@ -5041,7 +5048,7 @@
             } else if (paymentMethod === 'bank') {
                 // Rule 4: Bank Sale -> Bank Credit (NO Ledger entry)
                 selectedBank.currentBalance = (selectedBank.currentBalance || 0) + finalAmount;
-                dbPromises.push(db.put('banks', selectedBank));
+                dbPromises.push(db.put('banks', selectedBank)); // <--- FIXED: Persist bank balance
                 
                 const newBankTx = {
                     id: generateUniqueId('BTX'), timestamp: timestamp, bankId: selectedBank.id, bankName: selectedBank.name, type: 'credit', 
@@ -5052,7 +5059,7 @@
                 dbPromises.push(db.put('bankTransactions', newBankTx));
                 
                  const bankIndex = banks.findIndex(b => b.id === selectedBank.id);
-                 if(bankIndex !== -1) banks[bankIndex] = selectedBank;
+                 if(bankIndex !== -1) banks[bankIndex] = selectedBank; // <--- FIXED: Local array update
             }
             
             await Promise.all(dbPromises);
@@ -5699,6 +5706,7 @@
                 } else if (paymentMethod === 'bank') {
                     // Rule 4: Bank Due Collection -> Bank Credit (NO Ledger)
                      selectedBank.currentBalance += amountToPay;
+                     dbPromises.push(db.put('banks', selectedBank)); // <--- FIXED: Persist bank balance
                      
                      const newBankTx = {
                         id: generateUniqueId('BTX'), timestamp: new Date().toISOString(), bankId: selectedBank.id,
@@ -5727,6 +5735,8 @@
                 } else if (paymentMethod === 'bank') {
                      // Bank Credit for overpayment
                      selectedBank.currentBalance += remainingPaidAmount;
+                     dbPromises.push(db.put('banks', selectedBank)); // <--- FIXED: Persist bank balance
+                     
                      const newBankTx = {
                         id: generateUniqueId('BTX'), timestamp: new Date().toISOString(), bankId: selectedBank.id,
                         bankName: selectedBank.name, type: 'credit', amount: remainingPaidAmount,
@@ -6586,6 +6596,7 @@
              addBankForm.reset();
              addBankForm.dataset.editingId = '';
              currentEditingBank = null;
+             bankOpeningBalanceInput.disabled = false;
         });
 
         addBankForm.addEventListener('submit', async (e) => {
@@ -6596,12 +6607,13 @@
             const bankName = bankNameInput.value.trim();
             const accountNo = bankAccountNoInput.value.trim();
             const openingBalance = parseFloat(bankOpeningBalanceInput.value) || 0;
+            const dbPromises = [];
 
             if (editingId) {
                 const index = banks.findIndex(b => b.id === id);
                 if (index !== -1) {
                     const existingBank = banks[index];
-                    const balanceDifference = openingBalance - existingBank.openingBalance;
+                    const balanceDifference = openingBalance - (existingBank.openingBalance || 0); // Difference based on initial balance field
                     
                     // Update the running balance by the difference in opening balance
                     existingBank.currentBalance = (existingBank.currentBalance || 0) + balanceDifference;
@@ -6609,7 +6621,8 @@
                     existingBank.name = bankName;
                     existingBank.accountNo = accountNo;
                     
-                    await db.put('banks', existingBank);
+                    dbPromises.push(db.put('banks', existingBank));
+                    banks[index] = existingBank; // Update local array
                     alert('ব্যাংক সফলভাবে আপডেট করা হয়েছে!');
                 }
             } else {
@@ -6617,13 +6630,16 @@
                     id, name: bankName, accountNo, openingBalance, currentBalance: openingBalance
                 };
                 banks.push(newBank);
-                await db.put('banks', newBank);
+                dbPromises.push(db.put('banks', newBank));
                 alert('নতুন ব্যাংক যোগ করা হয়েছে!');
             }
+            
+            await Promise.all(dbPromises);
 
             addBankForm.reset();
             addBankForm.dataset.editingId = '';
             currentEditingBank = null;
+            bankOpeningBalanceInput.disabled = false;
             updateAllUI();
         });
 
@@ -6635,16 +6651,21 @@
                  // Set the opening balance value for editing reference
                  bankOpeningBalanceInput.value = currentEditingBank.openingBalance || 0; 
                  addBankForm.dataset.editingId = id;
-                 alert('ব্যাংকের প্রাথমিক ব্যালেন্স পরিবর্তন করলে বর্তমান ব্যালেন্সও সেই অনুযায়ী পরিবর্তিত হবে।');
+                 bankOpeningBalanceInput.disabled = true; // Block editing of opening balance after first creation
+                 alert('ব্যাংকের প্রাথমিক ব্যালেন্স এডিট করা যাবে না। যদি পরিবর্তন করতে হয়, তবে অ্যাডমিনকে যোগাযোগ করুন।');
              }
         }
 
         async function deleteBank(id) {
             if (confirm('আপনি কি নিশ্চিত এই ব্যাংকটি মুছে ফেলতে চান? এই ব্যাংকের সাথে সম্পর্কিত সকল লেনদেনও মুছে যাবে।')) {
-                await db.delete('banks', id);
+                const dbPromises = [];
+                dbPromises.push(db.delete('banks', id));
+                
                 // Also delete all related transactions
                 const relatedTxs = bankTransactions.filter(t => t.bankId === id);
-                await Promise.all(relatedTxs.map(t => db.delete('bankTransactions', t.id)));
+                dbPromises.push(...relatedTxs.map(t => db.delete('bankTransactions', t.id)));
+                
+                await Promise.all(dbPromises);
 
                 banks = banks.filter(b => b.id !== id);
                 bankTransactions = bankTransactions.filter(t => t.bankId !== id);
@@ -6672,12 +6693,14 @@
                 alert('ব্যাংকে পর্যাপ্ত ব্যালেন্স নেই।');
                 return;
             }
+            
+            const dbPromises = [];
 
             // 1. Update Bank Balance
             bank.currentBalance -= amount;
-            await db.put('banks', bank);
+            dbPromises.push(db.put('banks', bank)); // <--- FIXED: Persist bank balance
             const bankIndex = banks.findIndex(b => b.id === bank.id);
-            if(bankIndex !== -1) banks[bankIndex] = bank;
+            if(bankIndex !== -1) banks[bankIndex] = bank; // <--- FIXED: Local array update
 
             // 2. Create Bank Transaction (Debit)
             const newBankTx = {
@@ -6686,10 +6709,12 @@
                 category: 'bank_withdrawal_expense', description: note
             };
             bankTransactions.push(newBankTx);
-            await db.put('bankTransactions', newBankTx);
+            dbPromises.push(db.put('bankTransactions', newBankTx));
 
-            // 3. Create Ledger Entry for Expense Module Audit (NO Ledger update - Rule 5)
+            // 3. Create Ledger Entry for Expense Module Audit (NO Cash Ledger update - Rule 5)
             // Note: Expense Report pulls from this Bank Transaction + Ledger Expenses
+            
+            await Promise.all(dbPromises);
 
             alert('ব্যাংক থেকে টাকা তুলে খরচ সফলভাবে রেকর্ড করা হয়েছে!');
             bankWithdrawalExpenseForm.reset();
@@ -6712,12 +6737,14 @@
                 alert('ব্যাংকে পর্যাপ্ত ব্যালেন্স নেই।');
                 return;
             }
+            
+            const dbPromises = [];
 
             // 1. Update Bank Balance (Debit)
             bank.currentBalance -= amount;
-            await db.put('banks', bank);
+            dbPromises.push(db.put('banks', bank)); // <--- FIXED: Persist bank balance
             const bankIndex = banks.findIndex(b => b.id === bank.id);
-            if(bankIndex !== -1) banks[bankIndex] = bank;
+            if(bankIndex !== -1) banks[bankIndex] = bank; // <--- FIXED: Local array update
 
 
             // 2. Create Bank Transaction (Debit)
@@ -6727,7 +6754,7 @@
                 category: 'bank_to_cash_transfer', description: `Transfer to Cash Ledger: ${note}`
             };
             bankTransactions.push(newBankTx);
-            await db.put('bankTransactions', newBankTx);
+            dbPromises.push(db.put('bankTransactions', newBankTx));
 
             // 3. Create Ledger Entry (Cash In - Income)
             const newLedgerEntry = {
@@ -6736,7 +6763,9 @@
                 amount: amount, bankName: bank.name
             };
             ledgerEntries.push(newLedgerEntry);
-            await db.put('ledgerEntries', newLedgerEntry);
+            dbPromises.push(db.put('ledgerEntries', newLedgerEntry));
+            
+            await Promise.all(dbPromises);
 
             alert('ব্যাংক থেকে Cash Ledger-এ টাকা সফলভাবে ট্রান্সফার হয়েছে!');
             bankToCashTransferForm.reset();
@@ -6770,13 +6799,16 @@
 
             if (filteredTxs.length === 0) {
                  bankTransactionTableBody.innerHTML = '<tr><td colspan="7">কোনো ব্যাংক লেনদেন খুঁজে পাওয়া যায়নি।</td></tr>';
+                 // Update Summary even if no transactions are in the period
+                 document.getElementById('finance-total-bank-balance').textContent = `৳ ${banks.reduce((sum, b) => sum + (b.currentBalance || 0), 0).toLocaleString()}`;
+                 document.getElementById('finance-total-bank-credit').textContent = `৳ ${totalCredit.toLocaleString()}`;
+                 document.getElementById('finance-total-bank-debit').textContent = `৳ ${totalDebit.toLocaleString()}`;
                  return;
             }
             
-            // Calculate running balance up to the earliest filtered transaction date
+            // Recalculate running balance up to the start of the filter date (if necessary)
             const earliestTxDate = filteredTxs.length > 0 ? moment(filteredTxs[0].timestamp).startOf('day') : moment();
              
-             // Recalculate running balance up to the start of the filter date (if necessary)
              banks.forEach(bank => {
                  const initialBalance = bank.openingBalance || 0;
                  let preFilterBalance = initialBalance;
@@ -6856,18 +6888,23 @@
             
             let allExpenses = [];
             
-            // 1. Get Cash Expenses (from Ledger)
+            // 1. Get Cash Expenses (from Ledger) - Exclude 'product_purchase' as it's an asset/inventory flow
             const cashExpenses = ledgerEntries.filter(e => e.type === 'expense' && e.category !== 'product_purchase').map(e => ({
                 ...e, source: 'Cash Ledger'
             }));
             allExpenses.push(...cashExpenses);
             
-            // 2. Get Bank Expenses (from Bank Transactions: only 'bank_withdrawal_expense')
-            const bankExpenses = bankTransactions.filter(t => t.type === 'debit' && t.category === 'bank_withdrawal_expense').map(t => ({
+            // 2. Get Bank Expenses (from Bank Transactions: only 'bank_withdrawal_expense' and 'supplier_payment' (if paid by bank))
+            const bankWithdrawalExpenses = bankTransactions.filter(t => t.type === 'debit' && t.category === 'bank_withdrawal_expense').map(t => ({
                  id: t.id, timestamp: t.timestamp, type: 'expense', category: t.category, description: t.description, amount: t.amount, 
                  source: t.bankName
             }));
-            allExpenses.push(...bankExpenses);
+             // Also include direct bank supplier payments as expense (rule is ambiguous, treat as expense here)
+             const bankSupplierPayments = bankTransactions.filter(t => t.type === 'debit' && t.category === 'supplier_payment').map(t => ({
+                 id: t.id, timestamp: t.timestamp, type: 'expense', category: t.category, description: t.description, amount: t.amount, 
+                 source: t.bankName
+            }));
+            allExpenses.push(...bankWithdrawalExpenses, ...bankSupplierPayments);
             
             // Filter by date and category
             let filteredExpenses = allExpenses.filter(e => {
@@ -6882,7 +6919,6 @@
 
             if (filteredExpenses.length === 0) {
                  expenseReportTableBody.innerHTML = '<tr><td colspan="6">কোনো খরচ খুঁজে পাওয়া যায়নি।</td></tr>';
-                 return;
             }
             
             filteredExpenses.forEach(expense => {
@@ -6890,7 +6926,7 @@
                 const categoryName = shopSettings.ledgerCategories.expense[expense.category] || expense.category;
                 
                 row.insertCell(0).textContent = moment(expense.timestamp).format('lll');
-                row.insertCell(1).textContent = expense.category === 'bank_withdrawal_expense' ? 'Bank Withdrawal' : 'Cash Out';
+                row.insertCell(1).textContent = expense.source === 'Cash Ledger' ? 'Cash Out' : 'Bank Debit';
                 row.insertCell(2).textContent = categoryName;
                 row.insertCell(3).textContent = expense.description;
                 row.insertCell(4).textContent = expense.source;
@@ -7107,9 +7143,25 @@
         }
 
         // --- Customer Management (New Section) ---
-        function renderCustomerList() {
+        function renderCustomerList(filterText = '') {
             customerListTableBody.innerHTML = '';
-            customers.filter(c => !c.customerCategory).forEach(customer => { // Only show general customers
+            
+            let filteredCustomers = customers.filter(c => !c.customerCategory); // Only show general customers
+
+            if (filterText) {
+                const lowerCaseFilter = filterText.toLowerCase();
+                filteredCustomers = filteredCustomers.filter(c => 
+                    c.name.toLowerCase().includes(lowerCaseFilter) || 
+                    c.phone.includes(lowerCaseFilter)
+                );
+            }
+
+            if (filteredCustomers.length === 0) {
+                 customerListTableBody.innerHTML = '<tr><td colspan="7">কোনো কাস্টমার খুঁজে পাওয়া যায়নি।</td></tr>';
+                 return;
+            }
+
+            filteredCustomers.forEach(customer => {
                 const row = customerListTableBody.insertRow();
                 row.insertCell(0).textContent = customer.name;
                 row.insertCell(1).textContent = customer.phone;
@@ -7151,6 +7203,11 @@
             });
         }
         
+        // NEW: Customer Management Search Event Listener
+        customerManagementSearchInput.addEventListener('input', (e) => {
+            renderCustomerList(e.target.value.trim());
+        });
+
         // ** NEW: Admin Due Adjustment Logic **
         async function adjustCustomerDue(customerId) {
             if (currentUser.role !== 'admin') {
@@ -7192,7 +7249,7 @@
 
             // 1. Update Customer Totals
             customer.currentDue = newDue;
-            customer.totalPurchased += difference; // Adjust totalPurchased to keep accounting balanced
+            customer.totalPurchased = (customer.totalPurchased || 0) + difference; // Adjust totalPurchased to keep accounting balanced
             await db.put('customers', customer);
             const customerIndex = customers.findIndex(c => c.id === customer.id);
             if(customerIndex !== -1) customers[customerIndex] = customer;
@@ -8341,7 +8398,7 @@
                 
                 groupedReports[groupKey].sales += (transaction.finalAmount * modifier);
                 groupedReports[groupKey].cost += (saleCost * modifier);
-                groupedReports[groupKey].profit += (transaction.profit || netProfit) * modifier;
+                groupedReports[groupKey].profit += (transaction.profit || netProfit) * modifier; // Should use recorded profit for accuracy
                 
                 totalAllSale += (transaction.finalAmount * modifier);
                 totalAllCost += (saleCost * modifier);
