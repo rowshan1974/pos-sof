@@ -12,6 +12,7 @@
 
     <!-- ======================================================== -->
     <!-- 1, 5, 6: New Globals for Offline Sync and Forecast Systems -->
+    <!-- (IndexedDB & Sync related globals REMOVED) -->
     <!-- ======================================================== -->
     <script>
         // No-storage mode: IndexedDB removed. All DB ops are no-ops.
@@ -20,7 +21,7 @@
             // --- EXISTING CODE ---
             if (typeof window.OBJECT_STORES === 'undefined') {
                 // ADD syncQueue to the list of stores for offline queue management
-                window.OBJECT_STORES = ['products', 'suppliers', 'customers', 'users', 'sales', 'dues', 'ledgerEntries', 'settings', 'purchaseHistory', 'supplierReturns', 'syncQueue']; 
+                window.OBJECT_STORES = ['products', 'suppliers', 'customers', 'users', 'sales', 'dues', 'ledgerEntries', 'settings', 'purchaseHistory', 'supplierReturns']; 
             }
             if (typeof window.db === 'undefined') {
                 window.db = {
@@ -34,10 +35,6 @@
                 };
             }
             // --- NEW ADD-ON CODE (1. Offline, 5. Forecast) ---
-            if (typeof window.localQueueDB === 'undefined') {
-                 window.localQueueDB = null;
-                 window._isOnline = navigator.onLine; 
-            }
              window.SALES_FORECAST_CONFIG = {
                 TREND_MODIFIER: 0.10, // +/- 10% trend base
                 MIN_FORECAST_SALES: 3, // Requires 3 months of data
@@ -234,7 +231,7 @@
                 put: async (store, value) => {
                     // Check for the mock DB case where FirebaseDB is initialized with mocked DB methods 
                     // (Should not happen but safer to check)
-                    if (store === 'syncQueue') return undefined; // Never sync the queue itself to Firebase
+                    // if (store === 'syncQueue') return undefined; // Never sync the queue itself to Firebase // REMOVED
 
                     const docId = (store === 'settings') ? 'main' : value && value.id;
                     if (!docId) throw new Error('put() requires value.id');
@@ -247,18 +244,18 @@
                     return docId;
                 },
                 add: async (store, value) => {
-                    if (store === 'syncQueue') return undefined;
+                    // if (store === 'syncQueue') return undefined; // REMOVED
                     // Align with existing code where id is pre-generated
                     return FirebaseDB.put(store, value);
                 },
                 delete: async (store, key) => {
-                    if (store === 'syncQueue') return true;
+                    // if (store === 'syncQueue') return true; // REMOVED
                     if (!key) return;
                     await window._fs.collection(store).doc(key).delete();
                     return true;
                 },
                 clear: async (store) => {
-                    if (store === 'syncQueue') return true;
+                    // if (store === 'syncQueue') return true; // REMOVED
                     const snap = await window._fs.collection(store).get();
                     const batchSize = 250;
                     let docs = snap.docs;
@@ -1573,11 +1570,7 @@
             <section id="dashboard-section" class="app-section active">
                 <h2><i class="fas fa-th-large"></i> ড্যাশবোর্ড</h2>
                 
-                <!-- 1. Offline + Sync System - Offline Status Bar -->
-                <div id="offline-status-bar" style="background: #dc3545; color: white; padding: 10px; margin-bottom: 20px; border-radius: 8px; text-align: center; display:none;">
-                    <i class="fas fa-wifi-slash"></i> আপনি অফলাইনে আছেন। সমস্ত লেনদেন Locally সংরক্ষণ করা হচ্ছে।
-                    <p id="sync-queue-count" style="margin: 5px 0 0 0; font-size: 14px;"></p>
-                </div>
+                <!-- 1. Offline + Sync System - Offline Status Bar (REMOVED) -->
 
                 <div class="dashboard-summary">
                     <!-- Existing summary cards -->
@@ -2319,14 +2312,7 @@
                     </form>
                 </div>
 
-                <!-- 1. Offline + Sync System - New Manual Sync/Clear Queue Section -->
-                <div class="setting-item">
-                    <h3><i class="fas fa-exchange-alt"></i> ডেটা সিঙ্ক ও অফলাইন</h3>
-                    <p>যদি ইন্টারনেট কানেকশন দুর্বল হয়, আপনি অফলাইনে কাজ করতে পারেন। লেনদেন স্বয়ংক্রিয়ভাবে সিঙ্ক না হলে ম্যানুয়ালি সিঙ্ক করতে পারেন।</p>
-                    <button id="manual-sync-btn" class="primary-btn"><i class="fas fa-sync"></i> ম্যানুয়াল সিঙ্ক করুন</button>
-                    <p id="manual-sync-status" style="margin-top: 10px; font-size: 14px;"></p>
-                </div>
-                <!-- বারকোড/SN কনফিগারেশন সেকশনটি সরানো হয়েছে (Original Comment)-->
+                <!-- 1. Offline + Sync System - New Manual Sync/Clear Queue Section (REMOVED) -->
 
 
                 <div class="setting-item">
@@ -2595,405 +2581,21 @@
 
     <!-- ================================================================================= -->
     <!-- ======================= START OF ALL NEW ADD-ON MODULES ========================= -->
+    <!-- (IndexedDB/Sync classes REMOVED) -->
     <!-- ================================================================================= -->
 
 
     <script>
-        // =================================================================================
-        // ======================= IndexedDB Helper Library (UPDATED) ======================
-        // =================================================================================
-        function openDB(dbName, version, upgradeCallback) {
-            return new Promise((resolve, reject) => {
-                const request = indexedDB.open(dbName, version);
-                request.onupgradeneeded = (event) => {
-                    const db = event.target.result;
-                    if (upgradeCallback) {
-                        upgradeCallback(db, event.oldVersion, event.newVersion);
-                    }
-                };
-                request.onsuccess = (event) => {
-                    resolve(event.target.result);
-                };
-                request.onerror = (event) => {
-                    reject(`Database error: ${event.target.error}`);
-                };
-            });
-        }
-
-        class DB {
-            // New version: Auto creates syncQueue on upgrade if missing.
-            constructor(dbName, version, upgradeCallback) {
-                this.dbName = dbName;
-                this.version = version;
-                this.upgradeCallback = upgradeCallback;
-                this.db = null;
-                // Add syncQueue to the global list of stores for easy iteration
-                if (!window.OBJECT_STORES.includes('syncQueue')) {
-                    window.OBJECT_STORES.push('syncQueue');
-                }
-            }
-
-            async open() {
-                if (this.db) {
-                    return Promise.resolve(this.db);
-                }
-                this.db = await openDB(this.dbName, this.version, (dbInstance, oldVersion, newVersion) => {
-                    console.log(`Upgrading database from version ${oldVersion} to ${newVersion}`);
-                     
-                     // 1. OFFLINE SYNC - Create Sync Queue Store
-                    if (!dbInstance.objectStoreNames.contains('syncQueue')) {
-                         console.log('Creating store: syncQueue');
-                        dbInstance.createObjectStore('syncQueue', { keyPath: 'id', autoIncrement: true });
-                    }
-
-                    // Existing logic for other stores
-                    window.OBJECT_STORES.filter(s => s !== 'syncQueue').forEach(storeName => {
-                         if (!dbInstance.objectStoreNames.contains(storeName)) {
-                            console.log('Creating store:', storeName);
-                            if (storeName === 'settings') {
-                                dbInstance.createObjectStore(storeName, { keyPath: 'key' });
-                            } else {
-                                dbInstance.createObjectStore(storeName, { keyPath: 'id', autoIncrement: false });
-                            }
-                        }
-                    });
-
-                    if (this.upgradeCallback) {
-                        this.upgradeCallback(dbInstance, oldVersion, newVersion);
-                    }
-
-                });
-                return this.db;
-            }
-
-            transaction(storeNames, mode = 'readonly') {
-                return this.db.transaction(storeNames, mode);
-            }
-
-            // Existing methods (UNMODIFIED)
-            get(storeName, key) { /* ... */ return new Promise(async (resolve, reject) => {
-                 await this.open();
-                const tx = this.transaction(storeName, 'readonly');
-                const store = tx.objectStore(storeName);
-                const request = store.get(key);
-                request.onsuccess = () => resolve(request.result);
-                request.onerror = (event) => reject(`Get error: ${event.target.error}`);
-            }); }
-            getAll(storeName) { /* ... */ return new Promise(async (resolve, reject) => {
-                 await this.open();
-                const tx = this.transaction(storeName, 'readonly');
-                const store = tx.objectStore(storeName);
-                const request = store.getAll();
-                request.onsuccess = () => resolve(request.result);
-                request.onerror = (event) => reject(`GetAll error: ${event.target.error}`);
-            }); }
-            put(storeName, value) { /* ... */ return new Promise(async (resolve, reject) => {
-                await this.open();
-                const tx = this.transaction(storeName, 'readwrite');
-                const store = tx.objectStore(storeName);
-                const request = store.put(value);
-                request.onsuccess = () => resolve(request.result);
-                request.onerror = (event) => reject(`Put error: ${event.target.error}`);
-                tx.oncomplete = () => resolve(true);
-                tx.onerror = (event) => reject(`Transaction error: ${event.target.error}`);
-            }); }
-            add(storeName, value) { /* ... */ return new Promise(async (resolve, reject) => {
-                await this.open();
-                const tx = this.transaction(storeName, 'readwrite');
-                const store = tx.objectStore(storeName);
-                const request = store.add(value);
-                request.onsuccess = () => resolve(request.result);
-                request.onerror = (event) => reject(`Add error: ${event.target.error}`);
-            }); }
-            delete(storeName, key) { /* ... */ return new Promise(async (resolve, reject) => {
-                 await this.open();
-                const tx = this.transaction(storeName, 'readwrite');
-                const store = tx.objectStore(storeName);
-                const request = store.delete(key);
-                request.onsuccess = () => resolve(true);
-                request.onerror = (event) => reject(`Delete error: ${event.target.error}`);
-            }); }
-            clear(storeName) { /* ... */ return new Promise(async (resolve, reject) => {
-                 await this.open();
-                const tx = this.transaction(storeName, 'readwrite');
-                const store = tx.objectStore(storeName);
-                const request = store.clear();
-                request.onsuccess = () => resolve(true);
-                request.onerror = (event) => reject(`Clear error: ${event.target.error}`);
-            }); }
-        }
-
-        // =================================================================================
-        // ======================= 1. OFFLINE + SYNC ADD-ON (OfflineSyncDB) ================
-        // =================================================================================
-        
-        class OfflineSyncDB {
-            constructor(onlineDb, fallbackDb) {
-                this.onlineDb = onlineDb; // FirebaseDB / Mocked DB
-                this.fallbackDb = fallbackDb; // IndexedDB (for cache/queue)
-
-                this.open = onlineDb.open; 
-                this.isSyncing = false;
-                window.addEventListener('online', () => this._handleConnectivityChange(true));
-                window.addEventListener('offline', () => this._handleConnectivityChange(false));
-                this._handleConnectivityChange(navigator.onLine); // Initial check
-                this.syncInterval = setInterval(() => this._syncQueue(), 60000); // Attempt sync every 60s
-                this.updateQueueStatus();
-            }
-            
-            _handleConnectivityChange(online) {
-                window._isOnline = online;
-                const statusElement = document.getElementById('offline-status-bar');
-                if (online) {
-                    statusElement.style.display = 'none';
-                    this._syncQueue();
-                } else {
-                    statusElement.style.display = 'block';
-                }
-                this.updateQueueStatus();
-            }
-
-            async updateQueueStatus() {
-                if (!this.fallbackDb || !this.fallbackDb.getAll) {
-                     document.getElementById('sync-queue-count').textContent = 'অপেক্ষা করছে: 0 (ডেটাবেস লোড হচ্ছে)';
-                    return;
-                }
-                try {
-                     await this.fallbackDb.open();
-                     const queue = await this.fallbackDb.getAll('syncQueue');
-                     const count = queue.length;
-                     const statusText = window._isOnline 
-                         ? `অপেক্ষা করছে: ${count} (স্বয়ংক্রিয় সিঙ্ক)` 
-                         : `অপেক্ষা করছে: ${count} (অফলাইন মোড)`;
-
-                     document.getElementById('sync-queue-count').textContent = statusText;
-                } catch(e) {
-                     console.error("Could not read syncQueue for status:", e);
-                }
-            }
-
-
-            async _syncQueue() {
-                 if (!window._isOnline || this.isSyncing) return;
-                 this.isSyncing = true;
-                 
-                 const statusMessageEl = document.getElementById('manual-sync-status');
-                 statusMessageEl.style.color = '#3b82f6';
-                 statusMessageEl.textContent = 'সিঙ্ক প্রক্রিয়া শুরু হচ্ছে...';
-                 
-                 try {
-                     await this.fallbackDb.open();
-                     const queue = await this.fallbackDb.getAll('syncQueue');
-
-                     if (queue.length === 0) {
-                         this.isSyncing = false;
-                         statusMessageEl.textContent = 'ডেটা স্বয়ংক্রিয়ভাবে সিঙ্ক করা হয়েছে।';
-                         statusMessageEl.style.color = '#22c55e';
-                         this.updateQueueStatus();
-                         return;
-                     }
-
-                     let successfulSyncs = 0;
-                     for (const item of queue) {
-                         try {
-                            const dbOperation = this.onlineDb[item.method].bind(this.onlineDb);
-
-                            // The online DB calls its original implementation (Firebase or mock)
-                            // Note: Value and key must be handled correctly by the inner Firebase implementation
-                            await dbOperation(item.store, item.valueOrKey); 
-                            
-                            await this.fallbackDb.delete('syncQueue', item.id); // Remove from queue only upon successful online save
-                            successfulSyncs++;
-
-                        } catch (e) {
-                             if (e && e.code === 'permission-denied') {
-                                 // Stop syncing if permissions are permanently denied.
-                                 console.error("Permission denied during sync, cannot continue sync.");
-                                 throw e;
-                             }
-                            console.warn(`Sync failed for item ${item.id} - ${item.store}/${item.method}. Stopping this run.`, e.message);
-                            break; 
-                        }
-                    }
-
-                    if (successfulSyncs > 0) {
-                         // Relaunch the data initialization/UI refresh on success.
-                        await initializeData(); 
-                        statusMessageEl.textContent = `সিঙ্ক সম্পন্ন হয়েছে। সফল: ${successfulSyncs}টি লেনদেন। বাকি: ${queue.length - successfulSyncs}টি।`;
-                    } else {
-                         statusMessageEl.textContent = `সিঙ্ক ব্যর্থ হয়েছে। অনুগ্রহ করে ইন্টারনেট চেক করুন বা ম্যানুয়াল সিঙ্ক করুন।`;
-                         statusMessageEl.style.color = '#dc3545';
-                    }
-                 } catch(e) {
-                    statusMessageEl.textContent = `সিঙ্ক প্রক্রিয়ায় মারাত্মক ত্রুটি: ${e.message}`;
-                    statusMessageEl.style.color = '#dc3545';
-                 } finally {
-                     this.isSyncing = false;
-                     this.updateQueueStatus();
-                 }
-            }
-            
-            async _queueOperation(storeName, method, valueOrKey) {
-                 await this.fallbackDb.open();
-                 const newQueueItem = {
-                    method: method, 
-                    store: storeName,
-                    timestamp: new Date().toISOString(),
-                    valueOrKey: valueOrKey 
-                 };
-                 // Add to queue in local IndexedDB
-                 await this.fallbackDb.add('syncQueue', newQueueItem);
-                 
-                 // Also immediately write to local IndexedDB (cache layer) 
-                 // Note: FirebaseDB uses firestore to write but here we want to use the local DB as cache. 
-                 // The assumption is: `this.onlineDb` here (which is `_actualStorageDB` a.k.a `FirebaseDB`) should fallback
-                 // to writing to the cache or the sync logic needs to handle this cache update itself.
-                 // Simplest: The original CRUD in main JS logic fetches/uses global data arrays, so if the Firebase put fails, 
-                 // the JS data arrays (`products`, `sales`, etc.) won't update.
-                 // We will rely on `initializeData` being called often to reload from IndexedDB, making `db.put` redundant for local caching itself.
-                 
-                 // RE-STRATEGY: Use fallbackDB for the immediate "local storage" of the main data store *and* queue. 
-                 await this.fallbackDb[method].bind(this.fallbackDb)(storeName, valueOrKey);
-                 
-                 this.updateQueueStatus();
-                 // HACK: Re-run initializeData to refresh the in-memory arrays after local fallbackDB save
-                 await initializeData();
-
-                 // Return success because the local write was successful
-                 return (method === 'delete') ? true : valueOrKey.id;
-            }
-
-
-            // --- Wrap CRUD Methods ---
-            async getAll(store) {
-                 // Try Firebase/Online first (Real-time read), fallback to IndexedDB (local cache).
-                 if (window._isOnline) {
-                     try {
-                        return await this.onlineDb.getAll(store);
-                     } catch(e) {
-                        if (e.code === 'permission-denied') throw e; 
-                        console.warn(`Online get failed for ${store}, using local cache: ${e.message}`);
-                        return await this.fallbackDb.getAll(store); 
-                     }
-                 } else {
-                    // Always try to load the latest local cache from IndexedDB
-                    return await this.fallbackDb.getAll(store); 
-                 }
-            }
-
-            async get(store, key) {
-                 if (window._isOnline) {
-                     try {
-                         return await this.onlineDb.get(store, key);
-                     } catch(e) {
-                          if (e.code === 'permission-denied') throw e; 
-                         console.warn(`Online get failed for ${store}/${key}, using local cache: ${e.message}`);
-                         return await this.fallbackDb.get(store, key);
-                     }
-                 } else {
-                    return await this.fallbackDb.get(store, key); 
-                 }
-            }
-
-            async put(store, value) {
-                if (window._isOnline) {
-                    try {
-                        // Attempt write to Firebase
-                        return await this.onlineDb.put(store, value);
-                    } catch(e) {
-                         if (e.code === 'permission-denied') throw e; 
-                        console.warn(`Online put failed for ${store}, queueing: ${e.message}`);
-                        // Fallback: Write to local DB *and* queue for sync later
-                        return await this._queueOperation(store, 'put', value); 
-                    }
-                } else {
-                    // Offline: Write to local DB *and* queue for sync later
-                    return await this._queueOperation(store, 'put', value);
-                }
-            }
-
-            async add(store, value) {
-                 if (window._isOnline) {
-                     try {
-                        return await this.onlineDb.add(store, value);
-                     } catch(e) {
-                          if (e.code === 'permission-denied') throw e; 
-                        console.warn(`Online add failed for ${store}, queueing: ${e.message}`);
-                        return await this._queueOperation(store, 'add', value);
-                     }
-                } else {
-                    return await this._queueOperation(store, 'add', value);
-                }
-            }
-            
-            async delete(store, key) {
-                 if (window._isOnline) {
-                     try {
-                        return await this.onlineDb.delete(store, key);
-                     } catch(e) {
-                         if (e.code === 'permission-denied') throw e; 
-                         console.warn(`Online delete failed for ${store}/${key}, queueing: ${e.message}`);
-                         return await this._queueOperation(store, 'delete', key);
-                     }
-                 } else {
-                      return await this._queueOperation(store, 'delete', key);
-                 }
-            }
-
-             async clear(store) {
-                 // Clear is typically for total data reset and must be synchronous with server/online
-                if (window._isOnline) {
-                    try {
-                        return await this.onlineDb.clear(store);
-                    } catch(e) {
-                        if (e.code === 'permission-denied') throw e;
-                         alert('Clear operation failed online, server not cleared!');
-                        return Promise.resolve(false); 
-                    }
-                } else {
-                     alert('Clear operation can only be performed while connected to the server!');
-                     return Promise.resolve(false); 
-                }
-             }
-
+        // --- DB Setup and Global DB Object Finalization (REPLACED) ---
+        // Final overriding of the global 'db' abstraction: Use FirebaseDB directly.
+        if (typeof window._actualStorageDB !== 'undefined' && window._actualStorageDB !== null) {
+            window.db = window._actualStorageDB;
+            console.log('Firebase storage directly configured as global db.');
+        } else {
+            console.warn('Firebase config not provided or failed. Using no-op mock DB.');
         }
         
-        const DB_NAME = 'fashionFlowDB';
-        const DB_VERSION = 5; // Updated version for the new 'syncQueue' store
-        
-        // --- End of OfflineSyncDB Module ---
-
-        
-        // --- Setup and Wrap the Global DB Object ---
-        // This is necessary because Firebase is NOT guaranteed. We establish the IndexedDB-backed DB here for local caching/queue, 
-        // regardless of Firebase's presence, to ensure data can be saved/retrieved locally.
-        const LOCAL_STORAGE_DB_VERSION = DB_VERSION; 
-        window.localQueueDB = new DB(DB_NAME, LOCAL_STORAGE_DB_VERSION, (dbInstance, oldVersion, newVersion) => {
-             // Replicate the original initialization callback logic here too, but wrapped in our DB constructor 
-             // for the initial IndexedDB instantiation before wrapping starts.
-             console.log(`Initialising DB stores on load for version ${newVersion}`);
-             OBJECT_STORES.forEach(storeName => {
-                 if (storeName !== 'syncQueue' && !dbInstance.objectStoreNames.contains(storeName)) {
-                      console.log('Creating store:', storeName);
-                      if (storeName === 'settings') {
-                           dbInstance.createObjectStore(storeName, { keyPath: 'key' });
-                      } else {
-                           dbInstance.createObjectStore(storeName, { keyPath: 'id', autoIncrement: false });
-                      }
-                 }
-             });
-        });
-        
-        // Final overriding of the global 'db' abstraction
-        if (typeof window._actualStorageDB === 'undefined' || window._actualStorageDB === null) {
-            // No Firebase. Fall back to just the localQueueDB instance itself, which will only write locally.
-             console.warn('Fallback to local-only IndexedDB.');
-             window._actualStorageDB = window.localQueueDB; // Set it as the only storage
-        }
-        
-        // Install the wrapper for all modules/existing code to use
-        window.db = new OfflineSyncDB(window._actualStorageDB, window.localQueueDB);
-
+        // --- Core UI Update Loop (Original) ---
         
         // =================================================================================
         // ======================== ORIGINAL APPLICATION CODE STARTS =========================
@@ -3010,7 +2612,7 @@
             fullPageLoader.style.display = 'none';
         }
 
-        // --- Global Data Arrays (Now loaded from IndexedDB/Firebase by initializeData) ---
+        // --- Global Data Arrays (Now loaded from Firebase by initializeData) ---
         let products = [];
         let suppliers = [];
         let customers = []; 
@@ -3131,14 +2733,14 @@
         }
 
 
-        // --- Data Initialization from IndexedDB/Firebase (Uses the wrapper `db`) ---
+        // --- Data Initialization from Firebase (Uses the direct `db` object) ---
         async function initializeData() {
             showLoader(); // 1. Loading System: Show loader at start
             try {
-                // IMPORTANT: db.open() now refers to the OfflineSyncDB open which calls the actual storage's open (e.g. Firebase)
+                // IMPORTANT: db.open() now refers to the FirebaseDB open
                 await db.open(); 
                 
-                // Fetch data using the wrapped `db`
+                // Fetch data using the direct `db` (Firebase)
                 const [
                     productsData, suppliersData, customersData, usersData, salesData, 
                     duesData, ledgerEntriesData, settingsData, purchaseHistoryData,
@@ -3448,9 +3050,7 @@
         const extendSubscriptionBtn = document.getElementById('extend-subscription-btn');
         const subscriptionMessage = document.getElementById('subscription-message');
         
-        // 1. Offline/Sync Elements (NEW)
-        const manualSyncBtn = document.getElementById('manual-sync-btn');
-        const manualSyncStatus = document.getElementById('manual-sync-status');
+        // 1. Offline/Sync Elements (REMOVED: manualSyncBtn, manualSyncStatus)
         
         // 4. Sales Report - Product Wise/Granular (NEW)
         const granularReportFromDateInput = document.getElementById('granular-report-from-date');
@@ -3604,7 +3204,6 @@
                 renderUserList();
             } else if (sectionId === 'settings') {
                 updateSubscriptionDisplay();
-                db.updateQueueStatus(); // Refresh sync status on settings page
             }
         }
 
@@ -3937,7 +3536,8 @@
 
             let stockAdded = 0;
             if (editingId) {
-                const originalStock = parseInt(addProductForm.dataset.originalStock || '0');
+                const originalProduct = products.find(p => p.id === id);
+                const originalStock = originalProduct ? originalProduct.stock : 0;
                 if (newProductData.stock > originalStock) {
                     stockAdded = newProductData.stock - originalStock;
                 }
@@ -3981,14 +3581,26 @@
                     supplier.currentDue = (supplier.currentDue || 0) + purchaseValue;
                 }
                 await db.put('suppliers', supplier);
+                
+                // Manually update local suppliers array
+                const supplierIndex = suppliers.findIndex(s => s.id === supplier.id);
+                if(supplierIndex !== -1) {
+                    suppliers[supplierIndex] = supplier;
+                }
+
                 renderSupplierList();
             }
 
             const finalProductData = { id, ...(existingProduct || {}), ...newProductData }; // Ensure merge of existing and new properties
             await db.put('products', finalProductData);
             
-            // Note: Array update logic for `products` is now primarily handled by `db.put` triggering `initializeData` via the sync wrapper. 
-            // Manual array update is skipped here for safety, though technically faster locally.
+             // Manually update local products array
+            const productIndex = products.findIndex(p => p.id === id);
+            if (productIndex !== -1) {
+                products[productIndex] = finalProductData;
+            } else {
+                products.push(finalProductData);
+            }
 
             alert(editingId ? 'পণ্য সফলভাবে আপডেট করা হয়েছে!' : 'পণ্য সফলভাবে যোগ করা হয়েছে!');
 
@@ -4229,7 +3841,13 @@
             };
             ledgerEntries.push(newLedgerEntry);
             await db.put('ledgerEntries', newLedgerEntry);
-
+            
+            // Manually update local arrays
+            const supplierIndex = suppliers.findIndex(s => s.id === currentSupplierForPayment.id);
+            if(supplierIndex !== -1) {
+                suppliers[supplierIndex] = currentSupplierForPayment;
+            }
+            
             alert('সাপ্লায়ার পেমেন্ট সফলভাবে রেকর্ড করা হয়েছে!');
             
             paySupplierDueModal.style.display = 'none';
@@ -4524,6 +4142,18 @@
 
             await Promise.all(dbPromises);
             
+             // Manually update local arrays
+            returnItems.forEach(item => {
+                const productIndex = products.findIndex(p => p.id === item.productId);
+                if (productIndex > -1) {
+                    // product is already updated in-place above
+                }
+            });
+            const supplierIndex = suppliers.findIndex(s => s.id === currentReturningSupplier.id);
+            if(supplierIndex !== -1) {
+                suppliers[supplierIndex] = currentReturningSupplier;
+            }
+
             // Re-fetch everything and update UI 
             await initializeData();
         });
@@ -4989,9 +4619,14 @@
                             if (due.remainingAmount < 0.01) {
                                 sales[saleIndex].status = 'সম্পূর্ণ';
                                 dbPromises.push(db.delete('dues', due.id));
+                                // Manually remove from local array
+                                dues = dues.filter(d => d.id !== due.id);
                             } else {
                                 sales[saleIndex].status = 'বাকি';
                                 dbPromises.push(db.put('dues', due));
+                                // Manually update local array
+                                const dueIndex = dues.findIndex(d => d.id === due.id);
+                                if(dueIndex !== -1) dues[dueIndex] = due;
                             }
                         }
                     } else { // Cash/Card/bKash (Completed Sale)
@@ -4999,12 +4634,14 @@
                          if(ledgerEntry) {
                             ledgerEntry.amount += amountDifference;
                             dbPromises.push(db.put('ledgerEntries', ledgerEntry));
+                             // Manually update local array
+                            const ledgerIndex = ledgerEntries.findIndex(l => l.id === ledgerEntry.id);
+                            if(ledgerIndex !== -1) ledgerEntries[ledgerIndex] = ledgerEntry;
                          }
                     }
                 }
 
                 // --- 4. Update the Sale Object ---
-                const oldTimestamp = sales[saleIndex].timestamp;
                 sales[saleIndex] = {
                     ...sales[saleIndex],
                     items: currentCart,
@@ -5021,8 +4658,8 @@
                 // Execute all database promises
                 await Promise.all(dbPromises);
                 
-                // Refresh all in-memory arrays and UI after put 
-                await initializeData();
+                // Refresh all in-memory arrays and UI after put (Need to call updateAllUI to ensure full refresh)
+                updateAllUI();
 
                 alert('বিক্রয় সফলভাবে আপডেট হয়েছে!');
                 const saleJustCompletedId = sales[saleIndex].saleId;
@@ -5072,6 +4709,7 @@
             let customerId = null;
             if(customerPhone) {
                 let customer = customers.find(c => c.phone === customerPhone);
+                let customerIndex = customers.findIndex(c => c.phone === customerPhone);
                 if(!customer) {
                     customer = {
                         id: generateUniqueId('C'),
@@ -5083,6 +4721,7 @@
                         currentDue: 0
                     };
                     customers.push(customer);
+                    customerIndex = customers.length - 1;
                 }
                 customer.totalPurchased += finalAmount;
                 if(status !== 'বাকি') { // If not due, it's paid
@@ -5092,6 +4731,8 @@
                 }
                 await db.put('customers', customer);
                 customerId = customer.id;
+                // Manually update local array
+                if (customerIndex !== -1) customers[customerIndex] = customer;
             }
             
             const newSale = {
@@ -5155,7 +4796,7 @@
             await Promise.all(dbPromises);
             
             // Refresh all in-memory arrays and UI after put 
-            await initializeData();
+            updateAllUI();
 
 
             alert('বিক্রয় সফলভাবে সম্পন্ন হয়েছে!');
@@ -5163,9 +4804,6 @@
             resetPOSPage();
             printBillBtn.style.display = 'block';
             printBillBtn.dataset.saleId = saleJustCompletedId;
-            // renderDashboard();
-            // renderCustomerList();
-            // renderLedger();
         });
 
 
@@ -5798,6 +5436,11 @@
             // For now, if remainingPaidAmount > 0, it is an overpayment that reduces currentDue to 0.
             if (customer.currentDue < 0) customer.currentDue = 0; 
             dbPromises.push(db.put('customers', customer));
+            
+            // Manually update local customer array
+            const customerIndex = customers.findIndex(c => c.id === customer.id);
+            if(customerIndex !== -1) customers[customerIndex] = customer;
+
 
             // Update or delete due records in DB
             updatedDues.forEach(updatedDue => {
@@ -5808,22 +5451,18 @@
                          if (originalSale) {
                              originalSale.status = 'সম্পূর্ণ';
                              dbPromises.push(db.put('sales', originalSale));
+                             // Manually update local sale array
+                             const saleIndex = sales.findIndex(s => s.id === originalSale.id);
+                             if(saleIndex !== -1) sales[saleIndex] = originalSale;
                          }
                          dbPromises.push(db.delete('dues', updatedDue.id));
+                         // Manually update local dues array
+                         dues = dues.filter(d => d.id !== updatedDue.id);
                      } else {
                          dbPromises.push(db.put('dues', updatedDue));
-                     }
-                 }
-            });
-            
-            // Local data update (Must update local arrays for the rest of the application run)
-            updatedDues.forEach(updatedDue => {
-                 const index = dues.findIndex(d => d.id === updatedDue.id);
-                 if (index !== -1) {
-                     if (updatedDue.remainingAmount < 0.01) {
-                         dues.splice(index, 1);
-                     } else {
-                         dues[index] = updatedDue;
+                         // Manually update local dues array
+                         const dueIndex = dues.findIndex(d => d.id === updatedDue.id);
+                         if(dueIndex !== -1) dues[dueIndex] = updatedDue;
                      }
                  }
             });
@@ -5831,7 +5470,7 @@
             await Promise.all(dbPromises);
             
             // Refresh all in-memory arrays and UI after put 
-            await initializeData();
+            updateAllUI();
 
 
             alert('পেমেন্ট সফল হয়েছে!');
@@ -5848,11 +5487,6 @@
             processDuePaymentBtn.disabled = true;
             paymentAmountInput.disabled = true;
             paymentMethodDueSelect.disabled = true;
-
-            // renderDuesList();
-            // renderCustomerList();
-            // renderDashboard();
-            // renderLedger();
         });
 
         printPaymentReceiptBtn.addEventListener('click', (e) => {
@@ -6117,8 +5751,13 @@
                           dueRecord.originalAmount = Math.max(0, dueRecord.originalAmount - totalReturnedValue); // Also reduce original amount
                            if (dueRecord.remainingAmount < 0.01) {
                                dbPromises.push(db.delete('dues', dueRecord.id));
+                               // Manually update local array
+                               dues = dues.filter(d => d.id !== dueRecord.id);
                            } else {
                                dbPromises.push(db.put('dues', dueRecord));
+                               // Manually update local array
+                               const dueIndex = dues.findIndex(d => d.id === dueRecord.id);
+                               if(dueIndex !== -1) dues[dueIndex] = dueRecord;
                            }
                       }
                       customer.currentDue = Math.max(0, (customer.currentDue || 0) - totalReturnedValue);
@@ -6129,40 +5768,53 @@
 
             // *** NEW LOGIC: Add Ledger Entry for Cash Refund (Expense) ***
             if (cashRefundAmount > 0) {
-                const refundLedgerEntry = {
-                    id: generateUniqueId('L'),
-                    timestamp: returnTransaction.timestamp, // Use same timestamp
-                    type: 'expense',
-                    category: 'customer_refund', // Use our new category
-                    description: `পণ্য ফেরত - কাস্টমার: ${currentReturnOriginalSale.customerName}, বিল: ${currentReturnOriginalSale.saleId}`,
-                    amount: cashRefundAmount,
-                    customerId: currentReturnOriginalSale.customerId,
-                    customerName: currentReturnOriginalSale.customerName,
-                    saleId: currentReturnOriginalSale.saleId
-                };
-                ledgerEntries.push(refundLedgerEntry);
-                dbPromises.push(db.put('ledgerEntries', refundLedgerEntry));
-            }
-            // *** END OF NEW LOGIC ***
-            
-            await Promise.all(dbPromises);
-            
-            // Refresh all in-memory arrays and UI after put 
-            await initializeData();
+                    const refundLedgerEntry = {
+                        id: generateUniqueId('L'),
+                        timestamp: returnTransaction.timestamp, // Use same timestamp
+                        type: 'expense',
+                        category: 'customer_refund', // Use our new category
+                        description: `পণ্য ফেরত - কাস্টমার: ${currentReturnOriginalSale.customerName}, বিল: ${currentReturnOriginalSale.saleId}`,
+                        amount: cashRefundAmount,
+                        customerId: currentReturnOriginalSale.customerId,
+                        customerName: currentReturnOriginalSale.customerName,
+                        saleId: currentReturnOriginalSale.saleId
+                    };
+                    ledgerEntries.push(refundLedgerEntry);
+                    dbPromises.push(db.put('ledgerEntries', refundLedgerEntry));
+                }
+                // *** END OF NEW LOGIC ***
+                
+                await Promise.all(dbPromises);
+                
+                // Manually update local arrays for customers, sales, and ledgerEntries
+                const customerIndex = customers.findIndex(c => c.id === customer.id);
+                if(customerIndex !== -1) customers[customerIndex] = customer;
+
+                const saleIndex = sales.findIndex(s => s.id === returnTransaction.id);
+                if (saleIndex !== -1) {
+                    sales[saleIndex] = returnTransaction;
+                } else {
+                    sales.push(returnTransaction);
+                }
+                
+                // Note: Ledger entries are pushed above if cashRefundAmount > 0.
+
+                // Refresh all in-memory arrays and UI after put 
+                updateAllUI();
 
 
-            alert(`পণ্য সফলভাবে ফেরত নেওয়া হয়েছে এবং ৳ ${totalReturnedValue.toLocaleString()} টাকা ফেরত/ক্রেডিট দেওয়া হয়েছে।`);
-            returnDetailsContainer.style.display = 'none';
-            returnSaleSearchInput.value = '';
-            returnSuccessMessage.style.display = 'block';
-            displayReturnId.textContent = returnId;
-            printReturnBillBtn.dataset.returnId = returnId;
+                alert(`পণ্য সফলভাবে ফেরত নেওয়া হয়েছে এবং ৳ ${totalReturnedValue.toLocaleString()} টাকা ফেরত/ক্রেডিট দেওয়া হয়েছে।`);
+                returnDetailsContainer.style.display = 'none';
+                returnSaleSearchInput.value = '';
+                returnSuccessMessage.style.display = 'block';
+                displayReturnId.textContent = returnId;
+                printReturnBillBtn.dataset.returnId = returnId;
 
-            // // Refresh relevant UI components (redundant due to initializeData)
-            // renderSalesReport(salesReportFromDateInput.value, salesReportToDateInput.value, salesReportSellerSelect.value);
-            // renderDashboard();
-            // renderLedger(); 
-        });
+                // // Refresh relevant UI components (redundant due to updateAllUI)
+                // renderSalesReport(salesReportFromDateInput.value, salesReportToDateInput.value, salesReportSellerSelect.value);
+                // renderDashboard();
+                // renderLedger(); 
+            });
 
         printReturnBillBtn.addEventListener('click', (e) => {
             const returnId = e.target.dataset.returnId;
@@ -6394,7 +6046,7 @@
             ledgerDateInput.value = today;
             updateLedgerCategoryDropdown();
             // Call initializeData to reload arrays and update UI safely
-            await initializeData(); 
+            updateAllUI(); 
         });
 
         document.getElementById('cancel-ledger-entry').addEventListener('click', () => {
@@ -6520,7 +6172,7 @@
                 ledgerEntries = ledgerEntries.filter(entry => entry.id !== id);
                 alert('লেনদেন সফলভাবে মুছে ফেলা হয়েছে!');
                  // Call initializeData to reload arrays and update UI safely
-                await initializeData();
+                updateAllUI();
             }
         }
 
@@ -6756,6 +6408,9 @@
             customer.currentDue = newDue;
             customer.totalPurchased += difference; // Adjust totalPurchased to keep accounting balanced
             await db.put('customers', customer);
+            // Manually update local array
+            const customerIndex = customers.findIndex(c => c.id === customer.id);
+            if(customerIndex !== -1) customers[customerIndex] = customer;
 
             // 2. Adjust Dues list (Clear all old dues and create a new consolidated due if newDue > 0)
             const dbPromises = [];
@@ -6808,7 +6463,7 @@
             await Promise.all(dbPromises);
             
             // Reload data and update UI
-            await initializeData();
+            updateAllUI();
 
             alert('বাকি টাকা সফলভাবে অ্যাডজাস্ট করা হয়েছে!');
         }
@@ -6862,7 +6517,7 @@
                 alert('নতুন কাস্টমার যোগ করা হয়েছে!');
             }
             // Update UI
-            await initializeData();
+            updateAllUI();
             addCustomerFormContainer.style.display = 'none';
         });
 
@@ -6915,6 +6570,7 @@
             }
 
             let customer = customers.find(c => c.phone === phone);
+            let customerIndex = customers.findIndex(c => c.phone === phone);
             const dbPromises = [];
 
             if (!customer) {
@@ -6931,6 +6587,7 @@
                     openingDue: 0 
                 };
                 customers.push(customer);
+                customerIndex = customers.length - 1;
                 dbPromises.push(db.put('customers', customer));
             }
 
@@ -6938,6 +6595,8 @@
             customer.totalPurchased = (customer.totalPurchased || 0) + amount;
             customer.currentDue = (customer.currentDue || 0) + amount;
             dbPromises.push(db.put('customers', customer));
+            // Manually update local array
+            if(customerIndex !== -1) customers[customerIndex] = customer;
 
             // 2. Create a 'Due' record 
             const dueId = generateUniqueId('D');
@@ -6965,7 +6624,7 @@
             // The `totalPurchased` acts as the financial offset for tracking purposes.
 
             await Promise.all(dbPromises);
-            await initializeData(); // Reload all to update UI and arrays
+            updateAllUI(); // Reload all to update UI and arrays
 
             showMessage(manualDueMessage, `৳ ${amount.toLocaleString()} বাকি সফলভাবে যোগ করা হয়েছে!`, true);
             addManualDueForm.reset();
@@ -6977,7 +6636,7 @@
         // --- Settings Utilities ---
         async function saveSettings(message) {
             await db.put('settings', shopSettings);
-            await initializeData();
+            updateAllUI();
             showMessage(document.getElementById('backup-status'), message, true);
         }
 
@@ -7076,7 +6735,7 @@
             
             await db.put('users', newUser);
             // Update UI/Cleanup
-            await initializeData();
+            updateAllUI();
             addUserFormContainer.style.display = 'none';
             addUserForm.reset();
         });
@@ -7120,7 +6779,7 @@
                 users = users.filter(u => u.id !== id);
                 alert('ব্যবহারকারী সফলভাবে মুছে ফেলা হয়েছে!');
                  // Call initializeData to reload arrays and update UI safely
-                await initializeData();
+                updateAllUI();
             }
         }
 
@@ -7140,11 +6799,7 @@
             alert('দোকানের তথ্য সফলভাবে আপডেট করা হয়েছে!');
         });
         
-        // 1. Offline + Sync System - Manual Sync Button
-        manualSyncBtn.addEventListener('click', async () => {
-             await window.db.open();
-             await window.db._syncQueue();
-        });
+        // 1. Offline + Sync System - Manual Sync Button (REMOVED)
 
         resetAllDataBtn.addEventListener('click', async () => {
             if (currentUser && currentUser.role !== 'admin') {
@@ -7153,7 +6808,7 @@
             }
             if (confirm('আপনি কি নিশ্চিত? সফটওয়্যারের সকল ডেটা (পণ্য, বিক্রয়, ব্যবহারকারী, বাকি টাকা) স্থায়ীভাবে মুছে যাবে। এই কাজটি অপরিবর্তনীয়!')) {
                 if (confirm('আপনি কি সত্যিই নিশ্চিত? এটি আপনার সকল ডেটা মুছে দেবে।')) {
-                    // Include syncQueue in clear list
+                    // Include all stores in clear list
                     const clearPromises = window.OBJECT_STORES.map(store => db.clear(store)); 
                     await Promise.all(clearPromises);
                     await handleLogout();
@@ -7258,15 +6913,13 @@
             }
         }
 
-        // --- Data Backup/Import Logic (Updated for IndexedDB) ---
+        // --- Data Backup/Import Logic (Updated for Firebase-only) ---
         backupDataBtn.addEventListener('click', async () => {
             try {
                 const backupData = {};
-                // Include syncQueue in fetch list, but exclude the syncQueue store data from backup file for clean transfer
+                // Include all stores in fetch list
                 const fetchPromises = window.OBJECT_STORES.map(async (storeName) => {
-                    if(storeName !== 'syncQueue') {
-                        backupData[storeName] = await db.getAll(storeName);
-                    }
+                    backupData[storeName] = await db.getAll(storeName);
                 });
                 await Promise.all(fetchPromises);
                 
@@ -7296,7 +6949,7 @@
                         const importedData = JSON.parse(e.target.result);
                         if (confirm('ডেটা ইম্পোর্ট করলে বর্তমান সকল ডেটা মুছে যাবে এবং এই ফাইলের ডেটা দ্বারা প্রতিস্থাপিত হবে। আপনি কি নিশ্চিত?')) {
                             
-                            // Clear both local IndexedDB and Firebase (via db wrapper's clear)
+                            // Clear all collections on Firebase
                             const clearPromises = window.OBJECT_STORES.map(store => db.clear(store));
                             await Promise.all(clearPromises);
                             
@@ -7995,10 +7648,7 @@
 
         document.addEventListener('DOMContentLoaded', async () => {
              showLoader(); // 1. Loading System: Show initial loader
-             // 1. OFFLINE SYNC - Wait for local DB to open for all systems that rely on the new wrapper.
-             await window.localQueueDB.open(); 
-             window.db.updateQueueStatus(); 
-
+             
              // Run existing initializeData (This re-loads all data into arrays, refreshes UI, and ensures initial users)
             await initializeData();
             
@@ -8070,11 +7720,6 @@
              granularReportToDateInput.value = today;
              // Set default manual due date
              manualDueDate.value = today;
-             
-             // Ensure offline bar is visible if truly offline on load
-             if (!navigator.onLine) {
-                 document.getElementById('offline-status-bar').style.display = 'block';
-             }
              
              // Initial checkSubscription call at the end of data load/session restore to ensure UI state is correct
              checkSubscription();
