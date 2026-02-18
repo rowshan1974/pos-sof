@@ -1081,9 +1081,12 @@
             overflow-y: auto;
             border: 1px solid var(--border-color);
             border-radius: 6px;
-            margin-top: 10px;
             background-color: var(--card-bg);
             box-shadow: 0 2px 5px var(--shadow-light);
+            position: absolute;
+            z-index: 100;
+            width: 90%; /* Adjust width as needed */
+            max-width: 400px;
         }
         .search-results-container div {
             padding: 10px;
@@ -1847,12 +1850,16 @@
 
             <section id="pos-section" class="app-section">
                 <h2><i class="fas fa-cash-register"></i> বিক্রয় পয়েন্ট (POS)</h2>
-                <div class="customer-info-section">
+                <div class="customer-info-section" style="position: relative;">
                     <h3><i class="fas fa-user"></i> কাস্টমার তথ্য</h3>
                     <label for="pos-customer-phone">কাস্টমার মোবাইল নম্বর:</label>
-                    <input type="text" id="pos-customer-phone" placeholder="মোবাইল নম্বর লিখুন" pattern="[0-9]*" inputmode="numeric">
+                    <input type="text" id="pos-customer-phone" placeholder="মোবাইল নম্বর দিয়ে খুঁজুন" pattern="[0-9]*" inputmode="numeric">
                     <label for="pos-customer-name">কাস্টমার নাম:</label>
-                    <input type="text" id="pos-customer-name" placeholder="কাস্টমার নাম">
+                    <input type="text" id="pos-customer-name" placeholder="নাম দিয়ে খুঁজুন">
+                    
+                    <!-- Customer Search Results Dropdown -->
+                    <div id="pos-customer-search-results" class="search-results-container" style="display:none;"></div>
+                    
                     <label for="pos-customer-address">কাস্টমার ঠিকানা:</label>
                     <textarea id="pos-customer-address" placeholder="কাস্টমার ঠিকানা"></textarea>
                     <button id="clear-customer-fields" class="cancel-btn"><i class="fas fa-eraser"></i> কাস্টমার তথ্য সাফ করুন</button>
@@ -1863,7 +1870,7 @@
                     <input type="text" id="pos-product-search" placeholder="পণ্য খুঁজুন (নাম, ID, S/N বা স্ক্যান বারকোড)">
                     <button id="pos-add-to-cart-btn"><i class="fas fa-cart-plus"></i> কার্টে যোগ করুন</button>
                 </div>
-                <div id="search-results-container" class="search-results-container">
+                <div id="search-results-container" class="search-results-container" style="display:none;">
                     </div>
 
                 <h3><i class="fas fa-shopping-cart"></i> বিক্রয় কার্ট</h3>
@@ -3177,6 +3184,7 @@
         const posCustomerPhoneInput = document.getElementById('pos-customer-phone');
         const posCustomerNameInput = document.getElementById('pos-customer-name');
         const posCustomerAddressInput = document.getElementById('pos-customer-address');
+        const posCustomerSearchResults = document.getElementById('pos-customer-search-results');
         const clearCustomerFieldsBtn = document.getElementById('clear-customer-fields');
         const posProductSearch = document.getElementById('pos-product-search');
         const searchResultsContainer = document.getElementById('search-results-container');
@@ -4642,24 +4650,62 @@
                  searchResultsContainer.style.display = 'none';
             }
         }
+        
+        // ==========================================================
+        // START: Customer Auto System Integration
+        // ==========================================================
 
-        posCustomerPhoneInput.addEventListener('input', (e) => {
-            const mobile = e.target.value;
-            const existingCustomer = customers.find(c => c.phone === mobile);
+        function handlePosCustomerSearch(searchTerm) {
+            posCustomerSearchResults.innerHTML = '';
+            if (searchTerm.length < 2) {
+                posCustomerSearchResults.style.display = 'none';
+                return;
+            }
 
-            if (existingCustomer) {
-                posCustomerNameInput.value = existingCustomer.name;
-                posCustomerAddressInput.value = existingCustomer.address;
+            const lowerSearchTerm = searchTerm.toLowerCase();
+            const matchedCustomers = customers.filter(c =>
+                c.name.toLowerCase().includes(lowerSearchTerm) ||
+                c.phone.includes(lowerSearchTerm)
+            );
+
+            if (matchedCustomers.length > 0) {
+                matchedCustomers.forEach(customer => {
+                    const div = document.createElement('div');
+                    div.textContent = `${customer.name} - ${customer.phone}`;
+                    div.addEventListener('click', () => {
+                        posCustomerNameInput.value = customer.name;
+                        posCustomerPhoneInput.value = customer.phone;
+                        posCustomerAddressInput.value = customer.address || '';
+                        posCustomerSearchResults.style.display = 'none';
+                    });
+                    posCustomerSearchResults.appendChild(div);
+                });
+                posCustomerSearchResults.style.display = 'block';
             } else {
-                 posCustomerNameInput.value = '';
-                 posCustomerAddressInput.value = '';
+                posCustomerSearchResults.style.display = 'none';
+            }
+        }
+
+        posCustomerNameInput.addEventListener('keyup', (e) => handlePosCustomerSearch(e.target.value));
+        posCustomerPhoneInput.addEventListener('keyup', (e) => handlePosCustomerSearch(e.target.value));
+
+        // Hide search results when clicking elsewhere
+        document.addEventListener('click', (event) => {
+            if (!posCustomerSearchResults.contains(event.target) && event.target !== posCustomerNameInput && event.target !== posCustomerPhoneInput) {
+                posCustomerSearchResults.style.display = 'none';
             }
         });
+
+        // ==========================================================
+        // END: Customer Auto System Integration
+        // ==========================================================
+
 
         clearCustomerFieldsBtn.addEventListener('click', () => {
             posCustomerPhoneInput.value = '';
             posCustomerNameInput.value = '';
             posCustomerAddressInput.value = '';
+            posCustomerSearchResults.style.display = 'none'; // Also hide results
         });
 
         posAddToCartBtn.addEventListener('click', () => {
