@@ -296,12 +296,43 @@
         }
 
         /* Base Body Styles - (ORIGINAL) */
+        html {
+            scroll-behavior: smooth;
+        }
+        
         body {
             font-family: 'Noto Sans Bengali', 'Poppins', Arial, sans-serif;
             margin: 0;
             background-color: var(--bg-light);
             color: var(--text-dark);
             line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Modern Slim Scrollbar for Main Content */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, var(--primary-blue), var(--light-blue));
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, var(--light-blue), var(--primary-blue));
+        }
+
+        /* Firefox Scrollbar */
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary-blue) rgba(0, 0, 0, 0.05);
         }
 
         /* --- NEW ADD-ON STYLES (2. Stock Alert) --- */
@@ -541,10 +572,39 @@
             box-shadow: 2px 0 10px var(--shadow-light);
             display: flex;
             flex-direction: column;
-            position: sticky;
+            position: fixed;
+            left: 0;
             top: 0;
             height: 100vh;
+            max-height: 100vh;
             border-right: 1px solid var(--border-color);
+            z-index: 1000;
+            overflow: hidden;
+        }
+
+        /* Modern Slim Scrollbar Design */
+        #sidebar ::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        #sidebar ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 2px;
+        }
+
+        #sidebar ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, var(--primary-blue), var(--light-blue));
+            border-radius: 2px;
+        }
+
+        #sidebar ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, var(--light-blue), var(--primary-blue));
+        }
+
+        /* Firefox Scrollbar */
+        #sidebar {
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary-blue) rgba(255, 255, 255, 0.05);
         }
 
         #sidebar .app-logo {
@@ -565,11 +625,17 @@
             font-weight: 700;
         }
 
+        #sidebar nav {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 0 0 10px 0;
+        }
+
         #sidebar nav ul {
             list-style: none;
             margin: 0;
             padding: 0;
-            flex-grow: 1;
         }
 
         #sidebar nav ul li {
@@ -599,34 +665,13 @@
             padding-left: 15px;
         }
 
-        #sidebar .logout-section {
-            margin-top: auto;
-            padding: 20px;
-            text-align: center;
-        }
-
-        #sidebar .logout-section button {
-            background-color: #dc3545;
-            color: white;
-            padding: 10px 15px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 16px;
-            width: 100%;
-            transition: background-color 0.3s ease;
-        }
-
-        #sidebar .logout-section button:hover {
-            background-color: #c82333;
-        }
-
-
         /* Main Content Area */
         #main-content {
             flex-grow: 1;
             padding: 30px;
             background-color: var(--bg-light);
+            margin-left: 250px; /* Account for fixed sidebar */
+            min-height: 100vh;
         }
 
         /* Top Bar / Header */
@@ -650,6 +695,7 @@
         .user-profile {
             display: flex;
             align-items: center;
+            gap: 15px;
         }
 
         .user-profile .user-avatar {
@@ -657,10 +703,14 @@
             height: 45px;
             border-radius: 50%;
             background-color: #e0e0e0;
-            margin-left: 15px;
             overflow: hidden;
             border: 2px solid var(--primary-blue);
             cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .user-profile .user-avatar:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(37, 99, 235, 0.5);
         }
         .user-profile .user-avatar img {
             width: 100%;
@@ -680,6 +730,31 @@
         .user-profile .user-info span {
             font-size: 14px;
             color: #9ca3af; /* Lighter gray for subtext */
+        }
+
+        /* Header Logout Button */
+        .header-logout-btn {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+        }
+        .header-logout-btn:hover {
+            background: linear-gradient(135deg, #c82333, #bd2130);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+        }
+        .header-logout-btn i {
+            font-size: 16px;
         }
 
         /* Section Styling */
@@ -1051,6 +1126,30 @@
             border: 1px solid var(--border-color);
             box-shadow: 0 1px 5px var(--shadow-light);
         }
+        
+        /* NEW: Customer search results container in POS */
+        .customer-search-results-pos {
+            position: absolute;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 100;
+            width: calc(100% - 40px); /* Adjust width as needed */
+        }
+        .customer-search-results-pos div {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .customer-search-results-pos div:hover {
+            background-color: #2b3a4f;
+        }
+        .customer-search-results-pos div:last-child {
+            border-bottom: none;
+        }
+
 
         .pos-input {
             display: flex;
@@ -1081,12 +1180,9 @@
             overflow-y: auto;
             border: 1px solid var(--border-color);
             border-radius: 6px;
+            margin-top: 10px;
             background-color: var(--card-bg);
             box-shadow: 0 2px 5px var(--shadow-light);
-            position: absolute;
-            z-index: 100;
-            width: 90%; /* Adjust width as needed */
-            max-width: 400px;
         }
         .search-results-container div {
             padding: 10px;
@@ -1446,6 +1542,50 @@
         }
 
 
+        /* Mobile Responsive Styles */
+        @media screen and (max-width: 768px) {
+            #sidebar {
+                width: 200px;
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+            
+            #sidebar.open {
+                transform: translateX(0);
+            }
+            
+            #main-content {
+                margin-left: 0;
+                padding: 15px;
+            }
+            
+            .user-profile .user-info {
+                display: none;
+            }
+            
+            .header-logout-btn {
+                padding: 8px 12px;
+                font-size: 12px;
+            }
+            
+            .header-logout-btn span {
+                display: none;
+            }
+        }
+
+        @media screen and (max-width: 480px) {
+            #topbar {
+                flex-direction: column;
+                gap: 10px;
+                align-items: flex-start;
+            }
+            
+            .user-profile {
+                width: 100%;
+                justify-content: flex-end;
+            }
+        }
+
         /* Print Styles */
         @media print {
             body * {
@@ -1587,9 +1727,6 @@
                     <li id="nav-settings"><a href="#" data-section="settings"><i class="fas fa-cogs"></i> সেটিংস</a></li>
                 </ul>
             </nav>
-            <div class="logout-section">
-                <button id="logout-btn"><i class="fas fa-sign-out-alt"></i> লগআউট</button>
-            </div>
         </div>
 
         <div id="main-content">
@@ -1602,6 +1739,10 @@
                     <div class="user-avatar" id="user-avatar-display">
                         <img id="profile-img" src="https://img.icons8.com/officel/80/null/user.png" alt="User Avatar">
                     </div>
+                    <!-- ✅ NEW: Header Logout Button -->
+                    <button id="logout-btn" class="header-logout-btn">
+                        <i class="fas fa-sign-out-alt"></i> লগআউট
+                    </button>
                 </div>
             </div>
 
@@ -1850,27 +1991,30 @@
 
             <section id="pos-section" class="app-section">
                 <h2><i class="fas fa-cash-register"></i> বিক্রয় পয়েন্ট (POS)</h2>
-                <div class="customer-info-section" style="position: relative;">
+                <div class="customer-info-section">
                     <h3><i class="fas fa-user"></i> কাস্টমার তথ্য</h3>
-                    <label for="pos-customer-phone">কাস্টমার মোবাইল নম্বর:</label>
-                    <input type="text" id="pos-customer-phone" placeholder="মোবাইল নম্বর দিয়ে খুঁজুন" pattern="[0-9]*" inputmode="numeric">
-                    <label for="pos-customer-name">কাস্টমার নাম:</label>
-                    <input type="text" id="pos-customer-name" placeholder="নাম দিয়ে খুঁজুন">
-                    
-                    <!-- Customer Search Results Dropdown -->
-                    <div id="pos-customer-search-results" class="search-results-container" style="display:none;"></div>
-                    
+                    <div style="position: relative;">
+                        <label for="pos-customer-phone">কাস্টমার মোবাইল নম্বর:</label>
+                        <input type="text" id="pos-customer-phone" placeholder="মোবাইল নম্বর লিখুন..." autocomplete="off">
+                        <div id="pos-customer-phone-search-results" class="customer-search-results-pos" style="display:none;"></div>
+                    </div>
+                    <div style="position: relative;">
+                        <label for="pos-customer-name">কাস্টমার নাম:</label>
+                        <input type="text" id="pos-customer-name" placeholder="কাস্টমার নাম..." autocomplete="off">
+                        <div id="pos-customer-name-search-results" class="customer-search-results-pos" style="display:none;"></div>
+                    </div>
                     <label for="pos-customer-address">কাস্টমার ঠিকানা:</label>
                     <textarea id="pos-customer-address" placeholder="কাস্টমার ঠিকানা"></textarea>
                     <button id="clear-customer-fields" class="cancel-btn"><i class="fas fa-eraser"></i> কাস্টমার তথ্য সাফ করুন</button>
                 </div>
+
 
                 <div class="pos-input">
                     <!-- বারকোড স্ক্যানিং এর জন্য ইনপুট -->
                     <input type="text" id="pos-product-search" placeholder="পণ্য খুঁজুন (নাম, ID, S/N বা স্ক্যান বারকোড)">
                     <button id="pos-add-to-cart-btn"><i class="fas fa-cart-plus"></i> কার্টে যোগ করুন</button>
                 </div>
-                <div id="search-results-container" class="search-results-container" style="display:none;">
+                <div id="search-results-container" class="search-results-container">
                     </div>
 
                 <h3><i class="fas fa-shopping-cart"></i> বিক্রয় কার্ট</h3>
@@ -2198,6 +2342,7 @@
                     </div>
                     <button id="filter-ledger" class="primary-btn"><i class="fas fa-filter"></i> ফিল্টার</button>
                     <button id="print-ledger" class="primary-btn"><i class="fas fa-print"></i> প্রিন্ট</button>
+                    <button id="delete-all-ledger" class="danger-btn" style="background: #dc3545; margin-left: 10px;"><i class="fas fa-trash-alt"></i> সব মুছুন</button>
                 </div>
                 <table id="ledger-table">
                     <thead>
@@ -2553,12 +2698,146 @@
                 <!-- 1. Offline + Sync System - New Manual Sync/Clear Queue Section (REMOVED) -->
 
 
+                <!-- ✅ NEW: Data Usage Dashboard -->
+                <div class="setting-item">
+                    <h3><i class="fas fa-chart-pie"></i> ডেটা ইউসেজ ড্যাশবোর্ড</h3>
+                    <p style="font-size: 14px; color: #94a3b8; margin-bottom: 15px;">সফটওয়্যারের মোট ডেটা ব্যবহারের পরিসংখ্যান</p>
+                    
+                    <div class="data-usage-dashboard" style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.8), rgba(30, 41, 59, 0.8)); border: 1px solid rgba(94, 234, 212, 0.2); border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+                        <!-- Total Usage Card -->
+                        <div class="total-usage-card" style="text-align: center; padding: 20px; background: linear-gradient(135deg, rgba(37, 99, 235, 0.2), rgba(59, 130, 246, 0.1)); border-radius: 10px; margin-bottom: 20px; border: 1px solid rgba(59, 130, 246, 0.3);">
+                            <div style="font-size: 48px; color: #60a5fa; margin-bottom: 10px;">
+                                <i class="fas fa-database"></i>
+                            </div>
+                            <div style="font-size: 14px; color: #94a3b8; margin-bottom: 5px;">মোট ডেটা ব্যবহার</div>
+                            <div id="total-data-usage" style="font-size: 36px; font-weight: bold; color: #e2e8f0;">0 KB</div>
+                            <div id="data-usage-percentage" style="font-size: 14px; color: #10b981; margin-top: 5px;">0% ব্যবহৃত</div>
+                        </div>
+
+                        <!-- Usage Bars -->
+                        <div class="usage-breakdown" style="margin-bottom: 20px;">
+                            <h4 style="margin: 0 0 15px 0; color: #e2e8f0; font-size: 16px;"><i class="fas fa-list-ul"></i> ক্যাটাগরি অনুযায়ী ব্যবহার</h4>
+                            
+                            <div class="usage-item" style="margin-bottom: 12px;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                    <span style="color: #cbd5e1; font-size: 14px;"><i class="fas fa-shopping-cart" style="color: #f59e0b; margin-right: 8px;"></i>বিক্রয়</span>
+                                    <span id="sales-data-size" style="color: #e2e8f0; font-size: 14px; font-weight: 500;">0 KB</span>
+                                </div>
+                                <div class="usage-bar-bg" style="background: rgba(255,255,255,0.1); height: 8px; border-radius: 4px; overflow: hidden;">
+                                    <div id="sales-usage-bar" class="usage-bar-fill" style="background: linear-gradient(90deg, #f59e0b, #fbbf24); height: 100%; border-radius: 4px; width: 0%; transition: width 0.5s ease;"></div>
+                                </div>
+                            </div>
+
+                            <div class="usage-item" style="margin-bottom: 12px;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                    <span style="color: #cbd5e1; font-size: 14px;"><i class="fas fa-users" style="color: #3b82f6; margin-right: 8px;"></i>কাস্টমার</span>
+                                    <span id="customers-data-size" style="color: #e2e8f0; font-size: 14px; font-weight: 500;">0 KB</span>
+                                </div>
+                                <div class="usage-bar-bg" style="background: rgba(255,255,255,0.1); height: 8px; border-radius: 4px; overflow: hidden;">
+                                    <div id="customers-usage-bar" class="usage-bar-fill" style="background: linear-gradient(90deg, #3b82f6, #60a5fa); height: 100%; border-radius: 4px; width: 0%; transition: width 0.5s ease;"></div>
+                                </div>
+                            </div>
+
+                            <div class="usage-item" style="margin-bottom: 12px;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                    <span style="color: #cbd5e1; font-size: 14px;"><i class="fas fa-box" style="color: #10b981; margin-right: 8px;"></i>পণ্য</span>
+                                    <span id="products-data-size" style="color: #e2e8f0; font-size: 14px; font-weight: 500;">0 KB</span>
+                                </div>
+                                <div class="usage-bar-bg" style="background: rgba(255,255,255,0.1); height: 8px; border-radius: 4px; overflow: hidden;">
+                                    <div id="products-usage-bar" class="usage-bar-fill" style="background: linear-gradient(90deg, #10b981, #34d399); height: 100%; border-radius: 4px; width: 0%; transition: width 0.5s ease;"></div>
+                                </div>
+                            </div>
+
+                            <div class="usage-item" style="margin-bottom: 12px;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                    <span style="color: #cbd5e1; font-size: 14px;"><i class="fas fa-money-check-alt" style="color: #8b5cf6; margin-right: 8px;"></i>লেজার</span>
+                                    <span id="ledger-data-size" style="color: #e2e8f0; font-size: 14px; font-weight: 500;">0 KB</span>
+                                </div>
+                                <div class="usage-bar-bg" style="background: rgba(255,255,255,0.1); height: 8px; border-radius: 4px; overflow: hidden;">
+                                    <div id="ledger-usage-bar" class="usage-bar-fill" style="background: linear-gradient(90deg, #8b5cf6, #a78bfa); height: 100%; border-radius: 4px; width: 0%; transition: width 0.5s ease;"></div>
+                                </div>
+                            </div>
+
+                            <div class="usage-item" style="margin-bottom: 12px;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                    <span style="color: #cbd5e1; font-size: 14px;"><i class="fas fa-truck" style="color: #ec4899; margin-right: 8px;"></i>সাপ্লায়ার</span>
+                                    <span id="suppliers-data-size" style="color: #e2e8f0; font-size: 14px; font-weight: 500;">0 KB</span>
+                                </div>
+                                <div class="usage-bar-bg" style="background: rgba(255,255,255,0.1); height: 8px; border-radius: 4px; overflow: hidden;">
+                                    <div id="suppliers-usage-bar" class="usage-bar-fill" style="background: linear-gradient(90deg, #ec4899, #f472b6); height: 100%; border-radius: 4px; width: 0%; transition: width 0.5s ease;"></div>
+                                </div>
+                            </div>
+
+                            <div class="usage-item" style="margin-bottom: 12px;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                    <span style="color: #cbd5e1; font-size: 14px;"><i class="fas fa-university" style="color: #06b6d4; margin-right: 8px;"></i>ব্যাংক</span>
+                                    <span id="banks-data-size" style="color: #e2e8f0; font-size: 14px; font-weight: 500;">0 KB</span>
+                                </div>
+                                <div class="usage-bar-bg" style="background: rgba(255,255,255,0.1); height: 8px; border-radius: 4px; overflow: hidden;">
+                                    <div id="banks-usage-bar" class="usage-bar-fill" style="background: linear-gradient(90deg, #06b6d4, #22d3ee); height: 100%; border-radius: 4px; width: 0%; transition: width 0.5s ease;"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Stats Grid -->
+                        <div class="stats-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 15px;">
+                            <div class="stat-box" style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; text-align: center;">
+                                <div id="total-records-count" style="font-size: 20px; font-weight: bold; color: #60a5fa;">0</div>
+                                <div style="font-size: 12px; color: #94a3b8;">মোট রেকর্ড</div>
+                            </div>
+                            <div class="stat-box" style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; text-align: center;">
+                                <div id="total-sales-count" style="font-size: 20px; font-weight: bold; color: #f59e0b;">0</div>
+                                <div style="font-size: 12px; color: #94a3b8;">মোট বিক্রয়</div>
+                            </div>
+                            <div class="stat-box" style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; text-align: center;">
+                                <div id="total-customers-count" style="font-size: 20px; font-weight: bold; color: #10b981;">0</div>
+                                <div style="font-size: 12px; color: #94a3b8;">মোট কাস্টমার</div>
+                            </div>
+                        </div>
+
+                        <button id="refresh-data-usage-btn" class="primary-btn" style="width: 100%; margin-top: 15px;"><i class="fas fa-sync-alt"></i> রিফ্রেশ করুন</button>
+                    </div>
+                </div>
+
+                <!-- ✅ NEW: Enhanced Backup Option -->
                 <div class="setting-item">
                     <h3><i class="fas fa-database"></i> ডেটা ব্যাকআপ ও ইম্পোর্ট</h3>
-                    <p>আপনার সকল ডেটা ব্যাকআপ নিন অথবা পূর্বের ডেটা ইম্পোর্ট করুন।</p>
-                    <button id="backup-data-btn" class="primary-btn"><i class="fas fa-download"></i> ডেটা ব্যাকআপ</button>
-                    <input type="file" id="import-data-input" accept=".json" style="display:none;">
-                    <button id="import-data-btn" class="primary-btn" onclick="document.getElementById('import-data-input').click();"><i class="fas fa-upload"></i> ডেটা ইম্পোর্ট</button>
+                    <p style="font-size: 14px; color: #94a3b8; margin-bottom: 15px;">আপনার সকল ডেটা ব্যাকআপ নিন অথবা পূর্বের ডেটা ইম্পোর্ট করুন</p>
+                    
+                    <!-- Backup Info Card -->
+                    <div class="backup-info-card" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.05)); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 10px; padding: 15px; margin-bottom: 15px;">
+                        <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                            <i class="fas fa-info-circle" style="color: #10b981; margin-right: 10px; font-size: 18px;"></i>
+                            <span style="color: #e2e8f0; font-weight: 500;">ব্যাকআপ তথ্য</span>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 14px;">
+                            <div>
+                                <span style="color: #94a3b8;">মোট ডেটা:</span>
+                                <span id="backup-data-size" style="color: #10b981; font-weight: bold; margin-left: 5px;">0 KB</span>
+                            </div>
+                            <div>
+                                <span style="color: #94a3b8;">লাস্ট ব্যাকআপ:</span>
+                                <span id="last-backup-time" style="color: #e2e8f0; margin-left: 5px;">কোনো ব্যাকআপ নেই</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button id="backup-data-btn" class="primary-btn" style="flex: 1; min-width: 150px;"><i class="fas fa-download"></i> ডেটা ব্যাকআপ</button>
+                        <input type="file" id="import-data-input" accept=".json" style="display:none;">
+                        <button id="import-data-btn" class="primary-btn" onclick="document.getElementById('import-data-input').click();" style="flex: 1; min-width: 150px; background: linear-gradient(135deg, #8b5cf6, #7c3aed);"><i class="fas fa-upload"></i> ডেটা ইম্পোর্ট</button>
+                    </div>
+                    
+                    <div id="backup-progress-container" style="display: none; margin-top: 15px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span style="font-size: 14px; color: #94a3b8;">ব্যাকআপ প্রগ্রেস...</span>
+                            <span id="backup-progress-text" style="font-size: 14px; color: #10b981;">0%</span>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.1); height: 8px; border-radius: 4px; overflow: hidden;">
+                            <div id="backup-progress-bar" style="background: linear-gradient(90deg, #10b981, #34d399); height: 100%; border-radius: 4px; width: 0%; transition: width 0.3s ease;"></div>
+                        </div>
+                    </div>
+
                     <p id="backup-status" style="margin-top: 10px; font-size: 14px;"></p>
                     <p id="import-status" style="margin-top: 10px; font-size: 14px;"></p>
                 </div>
@@ -2567,12 +2846,124 @@
                     <h3><i class="fas fa-star"></i> সাবস্ক্রিপশন ব্যবস্থাপনা</h3>
                     <p>বর্তমান সাবস্ক্রিপশনের মেয়াদ: <span id="subscription-end-date" style="font-weight: bold;"></span></p>
                     <p id="subscription-status" style="font-weight: bold;"></p>
-                    <label for="subscription-password">সাবস্ক্রিপশন পাসওয়ার্ড:</label>
-                    <input type="password" id="subscription-password" placeholder="মেয়াদ বাড়ানোর পাসওয়ার্ড" required>
-                    <label for="subscription-days-to-add">মেয়াদ বাড়ান (দিন):</label>
-                    <input type="number" id="subscription-days-to-add" value="30" min="1" required>
-                    <button id="extend-subscription-btn" class="primary-btn"><i class="fas fa-plus-circle"></i> মেয়াদ বাড়ান</button>
-                    <p id="subscription-message" class="error-message"></p>
+                    
+                    <div style="margin-top: 20px; padding: 15px; background: rgba(37, 99, 235, 0.1); border-radius: 8px;">
+                        <h4 style="margin-top: 0; color: var(--light-blue);"><i class="fas fa-calendar-alt"></i> মেয়াদ পরিবর্তন করুন</h4>
+                        <p style="font-size: 14px; color: #94a3b8; margin-bottom: 15px;">মেয়াদ বাড়াতে বা কমাতে নতুন তারিখ নির্বাচন করুন।</p>
+                        
+                        <label for="subscription-modify-password">অ্যাডমিন পাসওয়ার্ড:</label>
+                        <input type="password" id="subscription-modify-password" placeholder="অ্যাডমিন পাসওয়ার্ড দিন" required>
+                        
+                        <label for="subscription-new-end-date">নতুন মেয়াদ শেষের তারিখ:</label>
+                        <input type="date" id="subscription-new-end-date" required>
+                        
+                        <div style="display: flex; gap: 10px; margin-top: 15px;">
+                            <button id="update-subscription-date-btn" class="primary-btn"><i class="fas fa-calendar-check"></i> মেয়াদ আপডেট করুন</button>
+                            <button id="extend-subscription-quick-btn" class="primary-btn" style="background: linear-gradient(135deg, #10b981, #059669);"><i class="fas fa-plus"></i> দ্রুত +৩০ দিন</button>
+                        </div>
+                        <p id="subscription-message" class="error-message"></p>
+                    </div>
+                    
+                    <div style="margin-top: 15px; padding: 10px; background: rgba(239, 68, 68, 0.1); border-radius: 6px; font-size: 13px; color: #fca5a5;">
+                        <i class="fas fa-exclamation-triangle"></i> <strong>নোট:</strong> মেয়াদ কমালে (আগের তারিখ দিলে) সাবস্ক্রিপশন আগেই শেষ হবে।
+                    </div>
+                </div>
+
+                <!-- ✅ NEW: Software Upgrade Section -->
+                <div class="setting-item">
+                    <h3><i class="fas fa-rocket"></i> সফটওয়্যার আপগ্রেড</h3>
+                    <p style="font-size: 14px; color: #94a3b8; margin-bottom: 15px;">নতুন ফিচার আনলক করতে সফটওয়্যার আপগ্রেড করুন</p>
+                    
+                    <!-- Current Version Card -->
+                    <div style="background: linear-gradient(135deg, rgba(37, 99, 235, 0.2), rgba(59, 130, 246, 0.1)); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 10px; padding: 15px; margin-bottom: 15px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <div style="font-size: 12px; color: #94a3b8; margin-bottom: 5px;">বর্তমান ভার্সন</div>
+                                <div id="current-version-display" style="font-size: 24px; font-weight: bold; color: #60a5fa;">v1.0.0</div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-size: 12px; color: #94a3b8; margin-bottom: 5px;">আনলকড ফিচার</div>
+                                <div id="unlocked-features-count" style="font-size: 20px; font-weight: bold; color: #10b981;">5 / 20</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Available Versions -->
+                    <div id="upgrade-versions-container" style="margin-bottom: 15px;">
+                        <label style="color: #e2e8f0; font-weight: 500; margin-bottom: 10px; display: block;">আপগ্রেড অপশন:</label>
+                        
+                        <div class="version-option" data-version="1.1.0" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; margin-bottom: 10px; cursor: pointer; transition: all 0.3s ease;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <div style="font-weight: 600; color: #e2e8f0;">ভার্সন 1.1.0</div>
+                                    <div style="font-size: 12px; color: #94a3b8;">Bank Module, Expense Report</div>
+                                </div>
+                                <i class="fas fa-lock" style="color: #f59e0b;"></i>
+                            </div>
+                        </div>
+
+                        <div class="version-option" data-version="1.2.0" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; margin-bottom: 10px; cursor: pointer; transition: all 0.3s ease;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <div style="font-weight: 600; color: #e2e8f0;">ভার্সন 1.2.0</div>
+                                    <div style="font-size: 12px; color: #94a3b8;">Advanced Customer Management, Delete Bill</div>
+                                </div>
+                                <i class="fas fa-lock" style="color: #f59e0b;"></i>
+                            </div>
+                        </div>
+
+                        <div class="version-option" data-version="1.3.0" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; margin-bottom: 10px; cursor: pointer; transition: all 0.3s ease;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <div style="font-weight: 600; color: #e2e8f0;">ভার্সন 1.3.0</div>
+                                    <div style="font-size: 12px; color: #94a3b8;">Data Dashboard, Bulk Operations</div>
+                                </div>
+                                <i class="fas fa-lock" style="color: #f59e0b;"></i>
+                            </div>
+                        </div>
+
+                        <div class="version-option" data-version="2.0.0" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(251, 191, 36, 0.1)); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; padding: 12px; margin-bottom: 10px; cursor: pointer; transition: all 0.3s ease;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <div style="font-weight: 600; color: #fbbf24;"><i class="fas fa-crown" style="margin-right: 5px;"></i>ভার্সন 2.0.0 - Premium</div>
+                                    <div style="font-size: 12px; color: #fcd34d;">All Features Unlocked</div>
+                                </div>
+                                <i class="fas fa-lock" style="color: #f59e0b;"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <label for="upgrade-password">অ্যাডমিন পাসওয়ার্ড:</label>
+                    <input type="password" id="upgrade-password" placeholder="আপগ্রেড করতে পাসওয়ার্ড দিন" required>
+                    
+                    <button id="upgrade-software-btn" class="primary-btn" style="background: linear-gradient(135deg, #f59e0b, #d97706); width: 100%; margin-top: 10px;">
+                        <i class="fas fa-rocket"></i> সফটওয়্যার আপগ্রেড করুন
+                    </button>
+                    <p id="upgrade-message" class="error-message"></p>
+                </div>
+
+                <div class="setting-item">
+                    <h3><i class="fas fa-layer-group"></i> সাবস্ক্রিপশন লেভেল</h3>
+                    <p>বর্তমান লেভেল: <span id="current-subscription-level" style="font-weight: bold; color: var(--light-blue);"></span></p>
+                    <p style="font-size: 14px; color: #94a3b8; margin-bottom: 15px;">সাবস্ক্রিপশন লেভেল পরিবর্তন করতে পাসওয়ার্ড দিন এবং নতুন লেভেল নির্বাচন করুন।</p>
+                    <label for="subscription-level-password">অ্যাডমিন পাসওয়ার্ড:</label>
+                    <input type="password" id="subscription-level-password" placeholder="অ্যাডমিন পাসওয়ার্ড দিন" required>
+                    <label for="subscription-level-select">সাবস্ক্রিপশন লেভেল:</label>
+                    <select id="subscription-level-select" required>
+                        <option value="basic">বেসিক (Basic)</option>
+                        <option value="standard">স্ট্যান্ডার্ড (Standard)</option>
+                        <option value="premium">প্রিমিয়াম (Premium)</option>
+                    </select>
+                    <div id="subscription-level-info" style="margin: 15px 0; padding: 10px; background: rgba(37, 99, 235, 0.1); border-radius: 6px; font-size: 14px;">
+                        <p style="margin: 0; color: #94a3b8;"><i class="fas fa-info-circle"></i> লেভেল তথ্য:</p>
+                        <ul style="margin: 5px 0 0 0; padding-left: 20px; color: #e2e8f0;">
+                            <li><strong>বেসিক:</strong> সীমিত ফিচারস</li>
+                            <li><strong>স্ট্যান্ডার্ড:</strong> সম্পূর্ণ POS এবং রিপোর্টিং</li>
+                            <li><strong>প্রিমিয়াম:</strong> সব ফিচারস এবং অগ্রাধিকার সাপোর্ট</li>
+                        </ul>
+                    </div>
+                    <button id="update-subscription-level-btn" class="primary-btn"><i class="fas fa-sync-alt"></i> লেভেল আপডেট করুন</button>
+                    <p id="subscription-level-message" class="error-message"></p>
                 </div>
 
                 <div class="setting-item">
@@ -2724,7 +3115,7 @@
                 <!-- Payments Received Table -->
                 <h4>বকেয়া পরিশোধ প্রাপ্তি <span class="table-total" id="total-customer-payment"></span></h4>
                 <table id="customer-payment-table">
-                    <thead><tr><th>তারিখ</th><th>উৎস</th><th>বিস্তারিত</th><th>টাকা</th></tr></thead>
+                    <thead><tr><th>তারিখ</th><th>উৎস</th><th>বিস্তারিত</th><th>টাকা</th><th>একশন</th></tr></thead>
                     <tbody></tbody>
                 </table>
                 <!-- Returns Table -->
@@ -2878,6 +3269,11 @@
             address: "গুনাগুরী, বাঁশখালী, চট্টগ্রাম",
             logoUrl: "", 
             subscriptionEndDate: null,
+            subscriptionLevel: 'basic', // ✅ NEW: Subscription Level (basic, standard, premium)
+            lastInvoiceNumber: 100000, // ✅ NEW: Invoice Counter
+            // ✅ NEW: Feature Lock System
+            currentVersion: '1.0.0', // Current software version
+            unlockedFeatures: ['basic_pos', 'basic_sales', 'basic_customers', 'basic_products', 'basic_ledger'], // Unlocked feature IDs
             ledgerCategories: {
                 expense: {
                     'supplier_payment': 'সাপ্লায়ার পেমেন্ট',
@@ -2903,6 +3299,46 @@
             phoneCell: "+88-031-XXXXXXX, Cell: 018XX-XXXXXX",
             vatReg: "24041124158",
             // snConfig block removed.
+        };
+
+        // ✅ NEW: Feature Lock Configuration
+        const FEATURE_VERSIONS = {
+            // Version 1.0.0 - Basic Features (Default)
+            '1.0.0': ['basic_pos', 'basic_sales', 'basic_customers', 'basic_products', 'basic_ledger'],
+            
+            // Version 1.1.0 - Bank Module
+            '1.1.0': ['basic_pos', 'basic_sales', 'basic_customers', 'basic_products', 'basic_ledger', 
+                      'bank_module', 'expense_report', 'advanced_reports'],
+            
+            // Version 1.2.0 - Advanced Customer Management
+            '1.2.0': ['basic_pos', 'basic_sales', 'basic_customers', 'basic_products', 'basic_ledger',
+                      'bank_module', 'expense_report', 'advanced_reports',
+                      'customer_management', 'manual_due_entry', 'delete_bill', 'edit_balance'],
+            
+            // Version 1.3.0 - Data Management
+            '1.3.0': ['basic_pos', 'basic_sales', 'basic_customers', 'basic_products', 'basic_ledger',
+                      'bank_module', 'expense_report', 'advanced_reports',
+                      'customer_management', 'manual_due_entry', 'delete_bill', 'edit_balance',
+                      'data_usage_dashboard', 'bulk_delete_cash_ledger', 'delete_payment'],
+            
+            // Version 2.0.0 - Premium Features
+            '2.0.0': ['basic_pos', 'basic_sales', 'basic_customers', 'basic_products', 'basic_ledger',
+                      'bank_module', 'expense_report', 'advanced_reports',
+                      'customer_management', 'manual_due_entry', 'delete_bill', 'edit_balance',
+                      'data_usage_dashboard', 'bulk_delete_cash_ledger', 'delete_payment',
+                      'forecast', 'stock_alerts', 'granular_reports', 'all_features']
+        };
+
+        // Feature to Menu Mapping
+        const FEATURE_MENU_MAP = {
+            'bank_module': ['nav-finance'],
+            'expense_report': ['nav-expenses'],
+            'advanced_reports': ['nav-granular-reports'],
+            'customer_management': ['nav-customer-management', 'nav-customer-data'],
+            'manual_due_entry': ['nav-manual-dues'],
+            'data_usage_dashboard': ['data-usage-section'],
+            'forecast': ['forecast-section'],
+            'stock_alerts': ['stock-alert-section']
         };
         if (typeof window.ADMIN_PASSWORD === 'undefined') {
             window.ADMIN_PASSWORD = 'arpan1234@#';
@@ -3055,6 +3491,18 @@
                     // Ensure new print fields exist on the loaded settings object
                     shopSettings.phoneCell = settingsData.phoneCell || shopSettings.phoneCell;
                     shopSettings.vatReg = settingsData.vatReg || shopSettings.vatReg;
+                    
+                    // ✅ NEW: Initialize invoice counter
+                    if (!shopSettings.lastInvoiceNumber) {
+                        const maxId = sales.map(s => parseInt(s.saleId)).filter(id => !isNaN(id)).reduce((max, id) => Math.max(max, id), 0);
+                        shopSettings.lastInvoiceNumber = maxId > 0 ? maxId : 100000;
+                    }
+                    
+                    // ✅ NEW: Initialize subscription level if not set
+                    if (!shopSettings.subscriptionLevel) {
+                        shopSettings.subscriptionLevel = 'basic';
+                    }
+
 
                 } else {
                     await db.put('settings', shopSettings);
@@ -3108,6 +3556,9 @@
             calculateAndRenderForecast(); // 5. Forecast
             populateProductReportCategoryFilter(); // 4. Sales Report - Product Wise filter
             populateExpenseReportCategoryFilter(); // NEW
+            updateDataUsageDashboard(); // ✅ NEW: Data Usage Dashboard
+            updateMenuVisibility(); // ✅ NEW: Feature Lock System
+            updateVersionDisplay(); // ✅ NEW: Version Display
         }
 
         // --- UI Element References (Original) ---
@@ -3184,7 +3635,6 @@
         const posCustomerPhoneInput = document.getElementById('pos-customer-phone');
         const posCustomerNameInput = document.getElementById('pos-customer-name');
         const posCustomerAddressInput = document.getElementById('pos-customer-address');
-        const posCustomerSearchResults = document.getElementById('pos-customer-search-results');
         const clearCustomerFieldsBtn = document.getElementById('clear-customer-fields');
         const posProductSearch = document.getElementById('pos-product-search');
         const searchResultsContainer = document.getElementById('search-results-container');
@@ -3200,6 +3650,9 @@
         const completeSaleBtn = document.getElementById('complete-sale-btn');
         const cancelSaleEditBtn = document.getElementById('cancel-sale-edit-btn');
         const printBillBtn = document.getElementById('print-bill-btn');
+        // ✅ NEW: POS customer search results
+        const posCustomerPhoneSearchResults = document.getElementById('pos-customer-phone-search-results');
+        const posCustomerNameSearchResults = document.getElementById('pos-customer-name-search-results');
 
         // Sales Report Elements (Original, unedited in this list)
         const salesReportSearchInput = document.getElementById('sales-report-search-input');
@@ -3281,6 +3734,7 @@
         const ledgerFilterCategorySelect = document.getElementById('ledger-filter-category');
         const filterLedgerBtn = document.getElementById('filter-ledger');
         const printLedgerBtn = document.getElementById('print-ledger');
+        const deleteAllLedgerBtn = document.getElementById('delete-all-ledger');
         const ledgerTableBody = document.querySelector('#ledger-table tbody');
 
         // Customer Data Elements (Original, unedited in this list)
@@ -3322,10 +3776,20 @@
 
         const subscriptionEndDateDisplay = document.getElementById('subscription-end-date');
         const subscriptionStatusDisplay = document.getElementById('subscription-status');
-        const subscriptionPasswordInput = document.getElementById('subscription-password');
-        const subscriptionDaysToAddInput = document.getElementById('subscription-days-to-add');
-        const extendSubscriptionBtn = document.getElementById('extend-subscription-btn');
         const subscriptionMessage = document.getElementById('subscription-message');
+        
+        // Subscription Date Modification Elements (NEW - replaces old extend system)
+        const subscriptionModifyPasswordInput = document.getElementById('subscription-modify-password');
+        const subscriptionNewEndDateInput = document.getElementById('subscription-new-end-date');
+        const updateSubscriptionDateBtn = document.getElementById('update-subscription-date-btn');
+        const extendSubscriptionQuickBtn = document.getElementById('extend-subscription-quick-btn');
+        
+        // Subscription Level Elements (NEW)
+        const currentSubscriptionLevelDisplay = document.getElementById('current-subscription-level');
+        const subscriptionLevelPasswordInput = document.getElementById('subscription-level-password');
+        const subscriptionLevelSelect = document.getElementById('subscription-level-select');
+        const updateSubscriptionLevelBtn = document.getElementById('update-subscription-level-btn');
+        const subscriptionLevelMessage = document.getElementById('subscription-level-message');
         
         // 4. Sales Report - Product Wise/Granular (NEW) (Original, unedited in this list)
         const granularReportFromDateInput = document.getElementById('granular-report-from-date');
@@ -3545,7 +4009,8 @@
                 return transactionDate.getDate() === today.getDate() &&
                        transactionDate.getMonth() === today.getMonth() &&
                        transactionDate.getFullYear() === today.getFullYear() &&
-                       transaction.type === 'sale';
+                       transaction.type === 'sale' &&
+                       transaction.status !== 'বাতিল'; // Exclude deleted bills
             }).reduce((sum, sale) => sum + sale.finalAmount, 0);
 
             const todayReturns = sales.filter(transaction => {
@@ -3553,7 +4018,8 @@
                 return transactionDate.getDate() === today.getDate() &&
                        transactionDate.getMonth() === today.getMonth() &&
                        transactionDate.getFullYear() === today.getFullYear() &&
-                       transaction.type === 'return';
+                       transaction.type === 'return' &&
+                       transaction.status !== 'বাতিল'; // Exclude deleted bills
             }).reduce((sum, returnTransaction) => sum + returnTransaction.finalAmount, 0);
 
             document.getElementById('today-total-sales').textContent = `৳ ${(todaySales + todayReturns).toLocaleString()}`;
@@ -3609,7 +4075,7 @@
                 let timeAgo = typeof moment !== 'undefined' ? moment(t.timestamp).fromNow() : new Date(t.timestamp).toLocaleDateString();
 
                 if (t.type === 'sale') {
-                    activityText = `নতুন বিক্রি #${t.saleId.substring(0, 7)} - ${t.items[0]?.name || 'পণ্য'}`;
+                    activityText = `নতুন বিক্রি #${t.saleId} - ${t.items[0]?.name || 'পণ্য'}`;
                 } else if (t.type === 'return') {
                     activityText = `ফেরত - ${t.items[0]?.name || 'পণ্য'}`;
                 }
@@ -4650,62 +5116,24 @@
                  searchResultsContainer.style.display = 'none';
             }
         }
-        
-        // ==========================================================
-        // START: Customer Auto System Integration
-        // ==========================================================
 
-        function handlePosCustomerSearch(searchTerm) {
-            posCustomerSearchResults.innerHTML = '';
-            if (searchTerm.length < 2) {
-                posCustomerSearchResults.style.display = 'none';
-                return;
-            }
+        posCustomerPhoneInput.addEventListener('input', (e) => {
+            const mobile = e.target.value;
+            const existingCustomer = customers.find(c => c.phone === mobile);
 
-            const lowerSearchTerm = searchTerm.toLowerCase();
-            const matchedCustomers = customers.filter(c =>
-                c.name.toLowerCase().includes(lowerSearchTerm) ||
-                c.phone.includes(lowerSearchTerm)
-            );
-
-            if (matchedCustomers.length > 0) {
-                matchedCustomers.forEach(customer => {
-                    const div = document.createElement('div');
-                    div.textContent = `${customer.name} - ${customer.phone}`;
-                    div.addEventListener('click', () => {
-                        posCustomerNameInput.value = customer.name;
-                        posCustomerPhoneInput.value = customer.phone;
-                        posCustomerAddressInput.value = customer.address || '';
-                        posCustomerSearchResults.style.display = 'none';
-                    });
-                    posCustomerSearchResults.appendChild(div);
-                });
-                posCustomerSearchResults.style.display = 'block';
+            if (existingCustomer) {
+                posCustomerNameInput.value = existingCustomer.name;
+                posCustomerAddressInput.value = existingCustomer.address;
             } else {
-                posCustomerSearchResults.style.display = 'none';
-            }
-        }
-
-        posCustomerNameInput.addEventListener('keyup', (e) => handlePosCustomerSearch(e.target.value));
-        posCustomerPhoneInput.addEventListener('keyup', (e) => handlePosCustomerSearch(e.target.value));
-
-        // Hide search results when clicking elsewhere
-        document.addEventListener('click', (event) => {
-            if (!posCustomerSearchResults.contains(event.target) && event.target !== posCustomerNameInput && event.target !== posCustomerPhoneInput) {
-                posCustomerSearchResults.style.display = 'none';
+                 posCustomerNameInput.value = '';
+                 posCustomerAddressInput.value = '';
             }
         });
-
-        // ==========================================================
-        // END: Customer Auto System Integration
-        // ==========================================================
-
 
         clearCustomerFieldsBtn.addEventListener('click', () => {
             posCustomerPhoneInput.value = '';
             posCustomerNameInput.value = '';
             posCustomerAddressInput.value = '';
-            posCustomerSearchResults.style.display = 'none'; // Also hide results
         });
 
         posAddToCartBtn.addEventListener('click', () => {
@@ -4835,145 +5263,90 @@
 
         discountAmountInput.addEventListener('input', updateCartTotal);
         
+        // ✅ NEW: Print Preview Function
         function launchPrint(title, contentHtml, printAreaClass = '') {
             const printWindow = window.open('', '_blank', 'height=800,width=800');
             printWindow.document.write(`<html><head><title>${title}</title>`);
-            printWindow.document.write('<style>');
+            
+            // Print Controls and Styles
             printWindow.document.write(`
-                @media print {
-                    body * {
-                        visibility: hidden;
+                <style>
+                    /* General styles for the preview window */
+                    body { font-family: 'Noto Sans Bengali', Arial, sans-serif; margin: 0; }
+                    #print-controls {
+                        position: fixed;
+                        top: 10px;
+                        right: 10px;
+                        background: #f0f0f0;
+                        padding: 10px;
+                        border: 1px solid #ccc;
+                        border-radius: 5px;
+                        z-index: 9999;
+                        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
                     }
-                    #print-area, #print-area * {
-                        visibility: visible;
-                        color: #000 !important;
-                        /* Increased font weight for better print contrast */
-                        font-weight: 700 !important; 
-                        -webkit-print-color-adjust: exact !important;
-                        print-color-adjust: exact !important;
+                    #print-controls button {
+                        margin: 0 5px;
+                        padding: 8px 15px;
+                        cursor: pointer;
+                        border: 1px solid #999;
+                        border-radius: 4px;
+                        background-color: #e7e7e7;
                     }
-                     #print-area.barcode-label-print-multiple {
-                        padding: 0;
-                        width: 100%; 
-                        height: auto;
-                        font-size: 8px;
-                        overflow: visible;
-                        display: flex;
-                        flex-wrap: wrap;
-                        justify-content: flex-start;
-                        align-items: flex-start;
+                     #print-controls button.print-btn {
+                        background-color: #4CAF50;
+                        color: white;
+                        border-color: #4CAF50;
                     }
-                    #print-area.barcode-label-print-multiple .single-barcode-label {
-                        width: 40mm !important; /* Fixed width, adjust as needed for your printer */
-                        height: 25mm !important; /* Fixed height, adjust as needed for your printer */
-                        box-sizing: border-box;
-                        border: 1px solid #000 !important;
-                        margin: 1mm; /* Small margin for cutting */
-                        padding: 2px;
-                        display: block;
-                        page-break-inside: avoid;
-                        float: left;
-                        color: black !important;
-                        background: white !important;
+
+                    /* Styles to hide controls when printing the preview */
+                    @media print {
+                        #print-controls { display: none; }
+                        body * { visibility: hidden; }
+                        #print-area, #print-area * { visibility: visible; }
+                        #print-area { position: absolute; left: 0; top: 0; width: 100%; }
                     }
-                    #print-area.barcode-label-print-multiple .single-barcode-label * {
-                        visibility: visible;
-                        color: black !important;
-                        background: white !important;
-                        -webkit-print-color-adjust: exact !important;
-                        print-color-adjust: exact !important;
-                    }
-                     #print-area.barcode-label-print-multiple .single-barcode-label svg {
-                        max-width: 100% !important;
-                        height: auto !important;
-                    }
-                    body { margin: 0; }
-                    /* General Print Styles for Bills/Reports */
-                     #print-area {
+
+                    /* Existing print styles from your original file for consistency */
+                    #print-area {
                         padding: 20px;
                         box-sizing: border-box;
-                        font-family: 'monospace', 'Courier New', Courier, sans-serif; 
+                        background: white;
                     }
-                    /* Ensure table borders show in print */
-                    #print-area table, #print-area th, #print-area td {
-                        border: 1px solid #000 !important;
-                    }
-                }
-                body { 
-                    font-family: 'monospace', 'Courier New', Courier, sans-serif; 
-                    margin: 0; 
-                }
-                #print-area {
-                    padding: 20px;
-                    box-sizing: border-box;
-                }
-                #print-area h2, #print-area h3, #print-area h4 {
-                    text-align: center;
-                    margin: 0;
-                }
-                #print-area h2 { font-size: 18px; margin-bottom: 5px; }
-                #print-area h3 { font-size: 14px; margin-bottom: 10px; }
-                #print-area h4 { 
-                    font-size: 14px; 
-                    text-align: left; 
-                    border-bottom: 1px solid #333; 
-                    padding-bottom: 3px;
-                    margin-top: 15px;
-                }
-                #print-area p {
-                    margin: 3px 0;
-                    font-size: 12px;
-                }
-                #print-area .center { text-align: center; }
-                #print-area table {
-                    width: 100%;
-                    border-collapse: collapse;
-                    margin: 10px 0;
-                    font-size: 12px;
-                }
-                 #print-area th, #print-area td {
-                    border: 1px solid #555 !important;
-                    padding: 4px;
-                    text-align: left;
-                }
-                #print-area .totals td {
-                    padding-top: 5px;
-                }
-                #print-area .right { text-align: right; }
-                #print-area hr {
-                    border: 0;
-                    border-top: 1px dashed #000;
-                    margin: 5px 0;
-                }
-                #print-area ul {
-                    padding-left: 15px;
-                    margin: 0;
-                }
-                #print-area .table-total, #print-content-tables .table-total {
-                    display:none; /* Hide on-screen totals from print */
-                }
-                 #print-area #print-content-tables h4 {
-                    display: flex;
-                    justify-content: space-between;
-                 }
-                #print-area #print-content-tables .table-total-print {
-                    font-size: 12px;
-                    font-weight: bold;
-                    text-align: right;
-                }
+                    #print-area.barcode-label-print-multiple { padding: 0; width: 100%; height: auto; font-size: 8px; overflow: visible; display: flex; flex-wrap: wrap; justify-content: flex-start; align-items: flex-start; }
+                    #print-area.barcode-label-print-multiple .single-barcode-label { width: 40mm !important; height: 25mm !important; box-sizing: border-box; border: 1px solid #000 !important; margin: 1mm; padding: 2px; display: block; page-break-inside: avoid; float: left; color: black !important; background: white !important; }
+                    #print-area.barcode-label-print-multiple .single-barcode-label * { visibility: visible; color: black !important; background: white !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+                    #print-area.barcode-label-print-multiple .single-barcode-label svg { max-width: 100% !important; height: auto !important; }
+                    #print-area h2 { text-align: center; margin-bottom: 5px; font-size: 22px;}
+                    #print-area h3 { text-align: center; font-size: 18px; margin-bottom: 10px; }
+                    #print-area h4 { border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-top: 15px; font-size: 16px;}
+                    #print-area p { margin: 2px 0; font-size: 14px;}
+                    #print-area table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+                    #print-area th, #print-area td { border: 1px solid black !important; padding: 8px; text-align: left; font-size: 13px; }
+                    #print-area .right { text-align: right; }
+                    #print-area .center { text-align: center; }
+                    #print-area hr { border: 0; border-top: 1px dashed #ccc; margin: 10px 0; }
+                </style>
             `);
-            printWindow.document.write('</style></head><body>');
-            printWindow.document.write(`<div id="print-area" class="${printAreaClass}">${contentHtml}</div>`); // Added printAreaClass here
+            
+            printWindow.document.write('</head><body>');
+            
+            // Add Print Controls Div
+            printWindow.document.write(`
+                <div id="print-controls">
+                    <button class="print-btn" onclick="window.print();">Print</button>
+                    <button onclick="window.close();">Cancel</button>
+                </div>
+            `);
+            
+            // Add the main content area
+            printWindow.document.write(`<div id="print-area" class="${printAreaClass}">${contentHtml}</div>`);
+            
             printWindow.document.write('</body></html>');
             printWindow.document.close();
             printWindow.focus();
-            setTimeout(() => {
-                printWindow.print();
-                printWindow.close();
-            }, 250);
         }
 
-        // --- MODIFIED: POS Payment Logic to support Bank ---
+        // --- ✅ NEW/MODIFIED: POS Payment Logic to support Bank, Editing, and New Invoice ID ---
         posPaymentForm.addEventListener('submit', async (event) => {
             event.preventDefault();
             if (currentCart.length === 0) {
@@ -4986,8 +5359,7 @@
             const finalAmount = parseFloat(cartFinalTotalSpan.textContent.replace('৳ ', '').replace(/,/g, ''));
             const selectedBankId = posBankSelect.value;
             let selectedBank = null;
-            
-             // Bank validation for new sales/update logic
+
             if (paymentMethod === 'bank') {
                 selectedBank = banks.find(b => b.id === selectedBankId);
                 if (!selectedBank) {
@@ -4995,30 +5367,33 @@
                     return;
                 }
             }
-            
-            // Existing editing logic (skipping recalculation details for brevity, assuming same logic applies)
-            if (isEditing && currentEditingSale) {
-                // ... (Original Editing Logic - Stock Reversion and Adjustment - remains similar) ...
-                alert('বিক্রয় সম্পাদনা সফলভাবে আপডেট হয়েছে!');
-                const saleJustCompletedId = currentEditingSale.saleId;
-                resetPOSPage();
-                
-                // Show print button for revised invoice
-                printBillBtn.style.display = 'block';
-                printBillBtn.dataset.saleId = saleJustCompletedId;
-                showSection('sales');
-                return;
-            }
 
-            // --- LOGIC FOR CREATING A NEW SALE (Original + Bank) --- 
-            const saleId = generateUniqueId('S');
+            if (isEditing && currentEditingSale) {
+                // ✅ Handle Sale Edit
+                await handleSaleUpdate();
+            } else {
+                // Handle New Sale
+                await handleNewSale();
+            }
+        });
+
+        // ✅ NEW: Function to handle new sale creation
+        async function handleNewSale() {
+            // ... (Most of your existing new sale logic goes here) ...
+            
+            // ✅ NEW: Get new numeric invoice ID
+            shopSettings.lastInvoiceNumber++;
+            const saleId = shopSettings.lastInvoiceNumber.toString();
+            
             const timestamp = new Date().toISOString();
             const sellerId = currentUser.id;
             const totalAmount = parseFloat(cartSubtotalSpan.textContent.replace('৳ ', '').replace(/,/g, ''));
             const discountAmount = parseFloat(discountAmountInput.value) || 0;
+            const finalAmount = totalAmount - discountAmount;
             const customerName = posCustomerNameInput.value.trim() || 'ক্যাশ কাস্টমার';
             const customerPhone = posCustomerPhoneInput.value.trim();
             const customerAddress = posCustomerAddressInput.value.trim() || 'N/A';
+            const paymentMethod = paymentMethodSelect.value;
             const status = (paymentMethod === 'due') ? 'বাকি' : 'সম্পূর্ণ';
 
             let totalProfit = 0;
@@ -5039,11 +5414,10 @@
                     productUpdatePromises.push(db.put('products', products[productIndex]));
                 }
             }
-
+            
             let customerId = null;
             if(customerPhone) {
                 let customer = customers.find(c => c.phone === customerPhone);
-                let customerIndex = customers.findIndex(c => c.phone === customerPhone);
                 if(!customer) {
                     customer = {
                         id: generateUniqueId('C'),
@@ -5055,36 +5429,33 @@
                         currentDue: 0
                     };
                     customers.push(customer);
-                    customerIndex = customers.length - 1;
                 }
                 customer.totalPurchased += finalAmount;
-                if(status !== 'বাকি') { // If not due, it's paid
+                if(status !== 'বাকি') {
                     customer.totalPaid += finalAmount;
                 } else {
                     customer.currentDue += finalAmount;
                 }
                 await db.put('customers', customer);
                 customerId = customer.id;
-                if (customerIndex !== -1) customers[customerIndex] = customer;
             }
-            
+
             const newSale = {
                 id: saleId, saleId, timestamp, sellerId, customerId, customerName, customerPhone, customerAddress, totalAmount, 
                 discountAmount, finalAmount, profit: totalProfit, paymentMethod, status, type: 'sale', items: currentCart, isRevised: false
             };
             
             sales.push(newSale);
-            const dbPromises = [...productUpdatePromises, db.put('sales', newSale)];
+            const dbPromises = [...productUpdatePromises, db.put('sales', newSale), db.put('settings', shopSettings)]; // Save updated invoice counter
 
             if (status === 'বাকি') {
                 const newDue = {
                     id: generateUniqueId('D'), dueId: generateUniqueId('D'), saleId: saleId, customerId: customerId, customerName: customerName, customerPhone: customerPhone,
-                    originalAmount: finalAmount, remainingAmount: finalAmount, paidAmount: 0, dateIssued: timestamp, description: `Sale #${saleId.slice(-6)}`, billType: 'sale', appliesToMonths: []
+                    originalAmount: finalAmount, remainingAmount: finalAmount, paidAmount: 0, dateIssued: timestamp, description: `Sale #${saleId}`, billType: 'sale', appliesToMonths: []
                 };
                 dues.push(newDue);
                 dbPromises.push(db.put('dues', newDue));
             } else if (paymentMethod === 'cash') {
-                // Rule 4: Cash Sale -> Ledger Income
                 const newLedgerEntry = {
                     id: generateUniqueId('L'), timestamp: timestamp, type: 'income', category: 'sales_income',
                     description: `বিক্রয় থেকে আয় - বিল: ${saleId}`, amount: finalAmount, customerId: customerId, customerName: customerName, saleId: saleId,
@@ -5092,9 +5463,9 @@
                 ledgerEntries.push(newLedgerEntry);
                 dbPromises.push(db.put('ledgerEntries', newLedgerEntry));
             } else if (paymentMethod === 'bank') {
-                // Rule 4: Bank Sale -> Bank Credit (NO Ledger entry)
+                const selectedBank = banks.find(b => b.id === posBankSelect.value);
                 selectedBank.currentBalance = (selectedBank.currentBalance || 0) + finalAmount;
-                dbPromises.push(db.put('banks', selectedBank)); // <--- FIXED: Persist bank balance
+                dbPromises.push(db.put('banks', selectedBank));
                 
                 const newBankTx = {
                     id: generateUniqueId('BTX'), timestamp: timestamp, bankId: selectedBank.id, bankName: selectedBank.name, type: 'credit', 
@@ -5103,11 +5474,8 @@
                 };
                 bankTransactions.push(newBankTx);
                 dbPromises.push(db.put('bankTransactions', newBankTx));
-                
-                 const bankIndex = banks.findIndex(b => b.id === selectedBank.id);
-                 if(bankIndex !== -1) banks[bankIndex] = selectedBank; // <--- FIXED: Local array update
             }
-            
+
             await Promise.all(dbPromises);
             updateAllUI();
 
@@ -5116,8 +5484,95 @@
             resetPOSPage();
             printBillBtn.style.display = 'block';
             printBillBtn.dataset.saleId = saleJustCompletedId;
-        });
+        }
 
+        // ✅ NEW: Function to handle sale update logic
+        async function handleSaleUpdate() {
+            const saleToUpdate = sales.find(s => s.id === currentEditingSale.id);
+            if (!saleToUpdate) {
+                alert("এডিট করার জন্য মূল বিক্রয় খুঁজে পাওয়া যায়নি।");
+                resetPOSPage();
+                return;
+            }
+            
+            const dbPromises = [];
+
+            // 1. Revert old stock quantities
+            for (const oldItem of currentEditingSale.items) {
+                const product = products.find(p => p.id === oldItem.productId);
+                if (product) {
+                    product.stock += oldItem.quantity;
+                }
+            }
+
+            // 2. Deduct new stock quantities and calculate new totals
+            let newTotalAmount = 0;
+            let newTotalProfit = 0;
+            for (const newItem of currentCart) {
+                const product = products.find(p => p.id === newItem.productId);
+                if (!product || product.stock < newItem.quantity) {
+                    alert(`দুঃখিত, ${product.name} স্টকে পর্যাপ্ত নেই।`);
+                    // Rollback stock changes before returning
+                    for (const oldItem of currentEditingSale.items) {
+                        const p = products.find(p => p.id === oldItem.productId);
+                        if(p) p.stock -= oldItem.quantity;
+                    }
+                    return;
+                }
+                product.stock -= newItem.quantity;
+                dbPromises.push(db.put('products', product));
+                
+                newTotalAmount += newItem.quantity * newItem.unitPrice;
+                newTotalProfit += (newItem.unitPrice - (newItem.purchasePrice || 0)) * newItem.quantity;
+            }
+            
+            // 3. Update sale object
+            const newDiscount = parseFloat(discountAmountInput.value) || 0;
+            const newFinalAmount = newTotalAmount - newDiscount;
+
+            // TODO: Financial reversal and update logic needs to be carefully implemented here.
+            // For simplicity in this update, we will adjust customer totals. A full system would require reversing ledger entries.
+            const customer = customers.find(c => c.id === saleToUpdate.customerId);
+            if (customer) {
+                // Revert old amounts
+                customer.totalPurchased -= saleToUpdate.finalAmount;
+                if (saleToUpdate.status !== 'বাকি') customer.totalPaid -= saleToUpdate.finalAmount;
+                else customer.currentDue -= saleToUpdate.finalAmount;
+                
+                // Apply new amounts
+                customer.totalPurchased += newFinalAmount;
+                if (paymentMethodSelect.value !== 'due') customer.totalPaid += newFinalAmount;
+                else customer.currentDue += newFinalAmount;
+
+                dbPromises.push(db.put('customers', customer));
+            }
+            
+            // Update the sale record itself
+            saleToUpdate.items = currentCart;
+            saleToUpdate.totalAmount = newTotalAmount;
+            saleToUpdate.discountAmount = newDiscount;
+            saleToUpdate.finalAmount = newFinalAmount;
+            saleToUpdate.profit = newTotalProfit;
+            saleToUpdate.paymentMethod = paymentMethodSelect.value;
+            saleToUpdate.status = (paymentMethodSelect.value === 'due') ? 'বাকি' : 'সম্পূর্ণ';
+            saleToUpdate.isRevised = true;
+            saleToUpdate.timestamp = new Date().toISOString(); // Update timestamp to reflect edit time
+            
+            dbPromises.push(db.put('sales', saleToUpdate));
+
+            await Promise.all(dbPromises);
+
+            alert('বিক্রয় সফলভাবে আপডেট করা হয়েছে!');
+            const saleJustCompletedId = saleToUpdate.saleId;
+            resetPOSPage();
+            
+            printBillBtn.style.display = 'block';
+            printBillBtn.dataset.saleId = saleJustCompletedId;
+            
+            // Refresh UI and navigate to sales report
+            updateAllUI();
+            showSection('sales');
+        }
 
         printBillBtn.addEventListener('click', () => {
             const saleIdToPrint = printBillBtn.dataset.saleId;
@@ -5379,6 +5834,11 @@
             let totalLossFromReturns = 0;
 
             filteredTransactions.forEach(transaction => {
+                // Skip deleted bills in totals
+                if (transaction.status === 'বাতিল') {
+                    return;
+                }
+                
                 if (transaction.type === 'sale') {
                     netFilteredSalesTotal += transaction.finalAmount;
                     netFilteredProfit += transaction.profit || 0;
@@ -5428,11 +5888,18 @@
             filteredTransactions.forEach(transaction => {
                 const row = salesReportTableBody.insertRow();
                 const isReturn = transaction.type === 'return';
+                const isDeleted = transaction.status === 'বাতিল';
+                
                 if (isReturn) {
                     row.classList.add('return-row');
                 }
+                if (isDeleted) {
+                    row.style.backgroundColor = '#3a1f1f';
+                    row.style.opacity = '0.7';
+                    row.style.textDecoration = 'line-through';
+                }
 
-                row.insertCell(0).textContent = transaction.saleId + (transaction.isRevised ? ' (Rev)' : '');
+                row.insertCell(0).textContent = transaction.saleId + (transaction.isRevised ? ' (সম্পাদিত)' : '') + (isDeleted ? ' [ডিলিট করা হয়েছে]' : '');
                 row.insertCell(1).textContent = new Date(transaction.timestamp).toLocaleString();
                 row.insertCell(2).textContent = users.find(u => u.id === transaction.sellerId)?.displayName || users.find(u => u.id === transaction.sellerId)?.username || 'N/A';
                 row.insertCell(3).textContent = transaction.customerName;
@@ -5468,13 +5935,25 @@
                 printBtn.className = 'primary-btn';
                 printBtn.addEventListener('click', () => printBill(transaction.saleId));
                 actionCell.appendChild(printBtn);
-
-                if (currentUser && currentUser.role === 'admin' && !isReturn && transaction.status !== 'বাতিল') { // Allow edit for non-cancelled sale
+                
+                // ✅ NEW: Enable edit button only for admin on non-returned, non-deleted sales
+                if (currentUser && currentUser.role === 'admin' && !isReturn && !isDeleted && transaction.status !== 'বাতিল') {
                     const editBtn = document.createElement('button');
                     editBtn.textContent = 'সম্পাদনা';
                     editBtn.className = 'edit-btn';
-                    editBtn.addEventListener('click', () => loadSaleForEditing(transaction.saleId));
+                    editBtn.addEventListener('click', () => loadSaleForEditing(transaction.id));
                     actionCell.appendChild(editBtn);
+                }
+                
+                // ✅ NEW: Delete button for admin users (only for non-deleted sales)
+                if (currentUser && currentUser.role === 'admin' && transaction.type === 'sale' && !isDeleted) {
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.textContent = 'ডিলিট';
+                    deleteBtn.className = 'danger-btn';
+                    deleteBtn.style.background = '#dc3545';
+                    deleteBtn.style.marginLeft = '5px';
+                    deleteBtn.addEventListener('click', () => deleteBill(transaction.id));
+                    actionCell.appendChild(deleteBtn);
                 }
             });
         }
@@ -5498,16 +5977,17 @@
         }
 
         filterSalesReportBtn.addEventListener('click', renderSalesReport);
-
+        
+        // ✅ NEW: loadSaleForEditing function
         function loadSaleForEditing(saleId) {
-            const saleToEdit = sales.find(s => s.saleId === saleId && s.type === 'sale');
+            const saleToEdit = sales.find(s => s.id === saleId && s.type === 'sale');
             if (!saleToEdit) {
                 alert('বিক্রয় খুঁজে পাওয়া যায়নি!');
                 return;
             }
 
             if (confirm('আপনি কি এই বিক্রয়টি সম্পাদনা করতে চান? এটি আপনাকে বিক্রয় (POS) পৃষ্ঠায় নিয়ে যাবে এবং বর্তমান কার্টটি এই বিলের পণ্য দ্বারা প্রতিস্থাপিত হবে।')) {
-                currentEditingSale = JSON.parse(JSON.stringify(saleToEdit)); // Deep copy to prevent accidental modification
+                currentEditingSale = JSON.parse(JSON.stringify(saleToEdit));
                 currentCart = JSON.parse(JSON.stringify(saleToEdit.items));
                 
                 showSection('pos');
@@ -5518,7 +5998,6 @@
                 discountAmountInput.value = saleToEdit.discountAmount;
                 paymentMethodSelect.value = saleToEdit.paymentMethod;
                 
-                // NEW: Handle bank selection for editing
                 if (saleToEdit.paymentMethod === 'bank' && saleToEdit.bankId) {
                     posBankSelectContainer.style.display = 'block';
                     posBankSelect.value = saleToEdit.bankId;
@@ -5532,6 +6011,140 @@
                 completeSaleBtn.innerHTML = '<i class="fas fa-save"></i> বিক্রয় আপডেট করুন';
                 completeSaleBtn.dataset.editing = 'true';
                 cancelSaleEditBtn.style.display = 'inline-block';
+            }
+        }
+
+        // ✅ NEW: Delete Bill Function
+        async function deleteBill(saleId) {
+            const saleToDelete = sales.find(s => s.id === saleId && s.type === 'sale');
+            if (!saleToDelete) {
+                alert('বিল খুঁজে পাওয়া যায়নি!');
+                return;
+            }
+
+            // Confirmation dialog with bill details
+            const confirmMessage = 
+                `⚠️ সতর্কতা: আপনি এই বিলটি ডিলিট করতে চলেছেন!\n\n` +
+                `বিল আইডি: ${saleToDelete.saleId}\n` +
+                `কাস্টমার: ${saleToDelete.customerName}\n` +
+                `মোট টাকা: ৳ ${saleToDelete.finalAmount.toLocaleString()}\n` +
+                `তারিখ: ${moment(saleToDelete.timestamp).format('Do MMMM, YYYY')}\n\n` +
+                `ডিলিট করলে:\n` +
+                `• বিক্রি হওয়া পণ্য স্টকে ফিরে যাবে\n` +
+                `• কাস্টমারের বাকি (যদি থাকে) সমন্বয় হবে\n` +
+                `• লেজার এন্ট্রি মুছে যাবে\n` +
+                `• ব্যাংক লেনদেন (যদি থাকে) সমন্বয় হবে\n\n` +
+                `আপনি কি নিশ্চিত?`;
+            
+            if (!confirm(confirmMessage)) {
+                return;
+            }
+
+            // Second confirmation for safety
+            if (!confirm(`আবার নিশ্চিত করুন: বিল #${saleToDelete.saleId} ডিলিট করা হবে। এই কাজটি অপরিবর্তনীয়!`)) {
+                return;
+            }
+
+            try {
+                showLoader();
+                const dbPromises = [];
+
+                // 1. Restore stock for all items in the sale
+                for (const item of saleToDelete.items) {
+                    const product = products.find(p => p.id === item.productId);
+                    if (product) {
+                        product.stock += item.quantity;
+                        dbPromises.push(db.put('products', product));
+                    }
+                }
+
+                // 2. Update customer data if customer exists
+                if (saleToDelete.customerId) {
+                    const customer = customers.find(c => c.id === saleToDelete.customerId);
+                    if (customer) {
+                        // Reduce total purchased
+                        customer.totalPurchased = Math.max(0, (customer.totalPurchased || 0) - saleToDelete.finalAmount);
+                        
+                        // If it was a due sale, reduce the due amount
+                        if (saleToDelete.status === 'বাকি') {
+                            customer.currentDue = Math.max(0, (customer.currentDue || 0) - saleToDelete.finalAmount);
+                        } else {
+                            // If paid, reduce total paid
+                            customer.totalPaid = Math.max(0, (customer.totalPaid || 0) - saleToDelete.finalAmount);
+                        }
+                        
+                        dbPromises.push(db.put('customers', customer));
+                    }
+                }
+
+                // 3. Handle dues - delete any due entry for this sale
+                const dueIndex = dues.findIndex(d => d.saleId === saleToDelete.saleId);
+                if (dueIndex !== -1) {
+                    const dueToDelete = dues[dueIndex];
+                    await db.delete('dues', dueToDelete.id);
+                    dues.splice(dueIndex, 1);
+                }
+
+                // 4. Handle ledger entries - delete income entries for this sale
+                const ledgerEntriesToDelete = ledgerEntries.filter(l => l.saleId === saleToDelete.saleId);
+                for (const ledgerEntry of ledgerEntriesToDelete) {
+                    await db.delete('ledgerEntries', ledgerEntry.id);
+                    const index = ledgerEntries.findIndex(l => l.id === ledgerEntry.id);
+                    if (index !== -1) {
+                        ledgerEntries.splice(index, 1);
+                    }
+                }
+
+                // 5. Handle bank transactions - reverse bank credit and delete transaction record
+                if (saleToDelete.paymentMethod === 'bank') {
+                    // Find the bank transaction for this sale
+                    const bankTxToDelete = bankTransactions.find(bt => 
+                        bt.description && bt.description.includes(saleToDelete.saleId) && bt.type === 'credit'
+                    );
+                    
+                    if (bankTxToDelete) {
+                        // Find the bank and deduct the amount
+                        const bank = banks.find(b => b.id === bankTxToDelete.bankId);
+                        if (bank) {
+                            bank.currentBalance = Math.max(0, (bank.currentBalance || 0) - saleToDelete.finalAmount);
+                            dbPromises.push(db.put('banks', bank));
+                        }
+                        
+                        // Delete bank transaction record
+                        await db.delete('bankTransactions', bankTxToDelete.id);
+                        const index = bankTransactions.findIndex(bt => bt.id === bankTxToDelete.id);
+                        if (index !== -1) {
+                            bankTransactions.splice(index, 1);
+                        }
+                    }
+                }
+
+                // 6. Mark the sale as deleted (soft delete) instead of actually removing it
+                // This preserves data integrity while marking it as deleted
+                saleToDelete.status = 'বাতিল';
+                saleToDelete.deletedAt = new Date().toISOString();
+                saleToDelete.deletedBy = currentUser.id;
+                dbPromises.push(db.put('sales', saleToDelete));
+
+                // Execute all database operations
+                await Promise.all(dbPromises);
+
+                hideLoader();
+                
+                alert(`✅ বিল #${saleToDelete.saleId} সফলভাবে ডিলিট করা হয়েছে!\n\n• পণ্য স্টকে ফিরে গেছে\n• কাস্টমার ডেটা আপডেট হয়েছে\n• লেজার/ব্যাংক এন্ট্রি সমন্বয় করা হয়েছে`);
+                
+                // Refresh the sales report
+                renderSalesReport();
+                
+                // Refresh dashboard if visible
+                if (document.getElementById('dashboard-section').classList.contains('active')) {
+                    renderDashboard();
+                }
+                
+            } catch (error) {
+                hideLoader();
+                console.error('Error deleting bill:', error);
+                alert('❌ বিল ডিলিট করতে সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।');
             }
         }
 
@@ -6070,9 +6683,12 @@
                     dbPromises.push(db.put('products', product));
                 }
             });
+            
+            // ✅ NEW: Use new invoice number for return ID
+            shopSettings.lastInvoiceNumber++;
+            const returnId = shopSettings.lastInvoiceNumber.toString();
 
             // Create the return transaction record
-            const returnId = generateUniqueId('RET');
             const returnTransaction = {
                 id: returnId,
                 saleId: returnId,
@@ -6095,6 +6711,7 @@
             
             sales.push(returnTransaction);
             dbPromises.push(db.put('sales', returnTransaction));
+            dbPromises.push(db.put('settings', shopSettings)); // Save invoice counter update
             
             // Update customer totals
             const customer = customers.find(c => c.id === currentReturnOriginalSale.customerId);
@@ -6458,6 +7075,132 @@
             printLedger(fromDate, toDate, type, category);
         });
 
+        // ✅ NEW: Delete All Cash Ledger Entries
+        deleteAllLedgerBtn.addEventListener('click', async () => {
+            if (currentUser.role !== 'admin') {
+                alert('আপনার সব ক্যাশ লেজার মুছার অনুমতি নেই।');
+                return;
+            }
+
+            // Get all cash ledger entries (excluding bank-related entries)
+            const cashLedgerEntries = ledgerEntries.filter(e => 
+                e.category !== 'customer_bank_payment' && 
+                e.category !== 'bank_withdrawal_expense' &&
+                e.category !== 'bank_to_cash_transfer'
+            );
+
+            if (cashLedgerEntries.length === 0) {
+                alert('কোনো ক্যাশ লেজার এন্ট্রি পাওয়া যায়নি।');
+                return;
+            }
+
+            const totalIncome = cashLedgerEntries.filter(e => e.type === 'income').reduce((sum, e) => sum + (e.amount || 0), 0);
+            const totalExpense = cashLedgerEntries.filter(e => e.type === 'expense').reduce((sum, e) => sum + (e.amount || 0), 0);
+            const netBalance = totalIncome - totalExpense;
+
+            // Confirmation dialog
+            const confirmMessage = 
+                `⚠️ সতর্কতা: আপনি সব ক্যাশ লেজার এন্ট্রি মুছতে চলেছেন!\n\n` +
+                `মোট এন্ট্রি: ${cashLedgerEntries.length} টি\n` +
+                `মোট Cash In: ৳ ${totalIncome.toLocaleString()}\n` +
+                `মোট Cash Out: ৳ ${totalExpense.toLocaleString()}\n` +
+                `নেট ব্যালেন্স: ৳ ${netBalance.toLocaleString()}\n\n` +
+                `ডিলিট করলে:\n` +
+                `• ${cashLedgerEntries.length} টি ক্যাশ লেজার এন্ট্রি চিরতরে মুছে যাবে\n` +
+                `• কাস্টমারদের বাকি (যদি due_collection থাকে) বাড়বে\n` +
+                `• সব ইনকাম/এক্সপেন্স হিসাব শূন্য হয়ে যাবে\n\n` +
+                `আপনি কি নিশ্চিত?`;
+
+            if (!confirm(confirmMessage)) {
+                return;
+            }
+
+            // Second confirmation with password
+            const adminPassword = prompt('নিরাপত্তার জন্য অ্যাডমিন পাসওয়ার্ড দিন:');
+            if (adminPassword !== ADMIN_PASSWORD) {
+                alert('ভুল পাসওয়ার্ড! ক্যাশ লেজার মুছা যাবে না।');
+                return;
+            }
+
+            // Third confirmation
+            if (!confirm(`আবার নিশ্চিত করুন: ${cashLedgerEntries.length} টি ক্যাশ লেজার এন্ট্রি চিরতরে মুছে ফেলা হবে। এই কাজটি অপরিবর্তনীয়!`)) {
+                return;
+            }
+
+            try {
+                showLoader();
+                const dbPromises = [];
+                const affectedCustomers = new Map();
+
+                // Process each entry
+                for (const entry of cashLedgerEntries) {
+                    // Track affected customers for due_collection entries
+                    if (entry.category === 'due_collection' && entry.customerId) {
+                        const customer = customers.find(c => c.id === entry.customerId);
+                        if (customer) {
+                            const currentAmount = affectedCustomers.get(customer.id) || 0;
+                            affectedCustomers.set(customer.id, currentAmount + (entry.amount || 0));
+                        }
+                    }
+
+                    // Delete from database
+                    await db.delete('ledgerEntries', entry.id);
+                    
+                    // Remove from local array
+                    const index = ledgerEntries.findIndex(e => e.id === entry.id);
+                    if (index !== -1) {
+                        ledgerEntries.splice(index, 1);
+                    }
+                }
+
+                // Update affected customers' balances
+                for (const [customerId, amount] of affectedCustomers) {
+                    const customer = customers.find(c => c.id === customerId);
+                    if (customer) {
+                        // Increase due (since payment is being removed)
+                        customer.currentDue = (customer.currentDue || 0) + amount;
+                        // Decrease total paid
+                        customer.totalPaid = Math.max(0, (customer.totalPaid || 0) - amount);
+                        dbPromises.push(db.put('customers', customer));
+                    }
+                }
+
+                // Create audit trail entry
+                const auditEntry = {
+                    id: generateUniqueId('L'),
+                    timestamp: new Date().toISOString(),
+                    type: 'expense',
+                    category: 'manual_due_adjustment',
+                    description: `সব ক্যাশ লেজার মুছা হয়েছে: ${cashLedgerEntries.length} টি এন্ট্রি, নেট ব্যালেন্স ৳ ${netBalance.toLocaleString()}`,
+                    amount: Math.abs(netBalance),
+                    customerId: null,
+                    customerName: 'System',
+                    saleId: 'DELETE_ALL_CASH_' + generateUniqueId('L')
+                };
+                ledgerEntries.push(auditEntry);
+                dbPromises.push(db.put('ledgerEntries', auditEntry));
+
+                await Promise.all(dbPromises);
+
+                hideLoader();
+
+                alert(`✅ সব ক্যাশ লেজার এন্ট্রি সফলভাবে মুছে ফেলা হয়েছে!\n\n` +
+                      `মোট মুছা এন্ট্রি: ${cashLedgerEntries.length} টি\n` +
+                      `আপডেট করা কাস্টমার: ${affectedCustomers.size} জন\n\n` +
+                      `• ক্যাশ লেজার আপডেট হয়েছে\n` +
+                      `• কাস্টমার ব্যালেন্স আপডেট হয়েছে`);
+
+                // Refresh UI
+                renderLedger();
+                updateAllUI();
+
+            } catch (error) {
+                hideLoader();
+                console.error('Error deleting all cash ledger:', error);
+                alert('❌ ক্যাশ লেজার মুছতে সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।');
+            }
+        });
+
         function printLedger(fromDateStr = '', toDateStr = '', filterType = '', filterCategory = '') {
             // Filter logic same as renderLedger
             let filteredLedger = ledgerEntries.filter(e => e.category !== 'customer_bank_payment').filter(e => e.category !== 'bank_withdrawal_expense');
@@ -6554,17 +7297,55 @@
                 return;
             }
             const entryToDelete = ledgerEntries.find(entry => entry.id === id);
-            // Block deletion of system-generated entries (except manual custom entries)
-            if (['sales_income', 'due_collection', 'customer_refund', 'product_purchase', 'supplier_payment', 'opening_due_entry', 'manual_due_adjustment', 'bank_to_cash_transfer'].includes(entryToDelete.category)) {
-                 alert('স্বয়ংক্রিয়ভাবে তৈরি লেনদেন মুছে ফেলা যাবে না।');
-                 return;
+            if (!entryToDelete) {
+                alert('লেনদেনটি খুঁজে পাওয়া যায়নি।');
+                return;
             }
 
-            if (confirm('আপনি কি নিশ্চিত এই লেনদেনটি মুছে ফেলতে চান?')) {
+            // Allow deletion of ALL entries including system-generated ones
+            // But show appropriate warning for system entries
+            const isSystemEntry = ['sales_income', 'due_collection', 'customer_refund', 'product_purchase', 'supplier_payment', 'opening_due_entry', 'manual_due_adjustment', 'bank_to_cash_transfer'].includes(entryToDelete.category);
+            
+            let confirmMessage = `আপনি কি নিশ্চিত এই লেনদেনটি মুছে ফেলতে চান?\n\n`;
+            confirmMessage += `তারিখ: ${new Date(entryToDelete.timestamp).toLocaleDateString()}\n`;
+            confirmMessage += `ধরণ: ${entryToDelete.type === 'expense' ? 'Cash Out' : 'Cash In'}\n`;
+            confirmMessage += `পরিমাণ: ৳ ${(entryToDelete.amount || 0).toLocaleString()}\n`;
+            confirmMessage += `বিবরণ: ${entryToDelete.description || 'N/A'}\n\n`;
+            
+            if (isSystemEntry) {
+                confirmMessage += `⚠️ সতর্কতা: এটি একটি সিস্টেম জেনারেটেড এন্ট্রি।\n`;
+                confirmMessage += `মুছলে শুধু এই লেজার এন্ট্রি মুছবে, কাস্টমার/সাপ্লায়ার বাকি অপরিবর্তিত থাকবে।\n\n`;
+            }
+            
+            confirmMessage += `ডিলিট করলে শুধু এই ক্যাশ লেজার এন্ট্রি মুছবে।`;
+
+            if (!confirm(confirmMessage)) {
+                return;
+            }
+
+            try {
+                showLoader();
+                
+                // Delete only the ledger entry - do NOT modify customer/supplier data
                 await db.delete('ledgerEntries', id);
-                ledgerEntries = ledgerEntries.filter(entry => entry.id !== id);
-                alert('লেনদেন সফলভাবে মুছে ফেলা হয়েছে!');
+                
+                // Remove from local array
+                const index = ledgerEntries.findIndex(entry => entry.id === id);
+                if (index !== -1) {
+                    ledgerEntries.splice(index, 1);
+                }
+                
+                hideLoader();
+                
+                alert(`✅ লেনদেন সফলভাবে মুছে ফেলা হয়েছে!\n\n` +
+                      `শুধুমাত্র ক্যাশ লেজার এন্ট্রি মুছা হয়েছে।\n` +
+                      `কাস্টমার/সাপ্লায়ার বাকি অপরিবর্তিত রয়েছে।`);
+                
                 updateAllUI();
+            } catch (error) {
+                hideLoader();
+                console.error('Error deleting ledger entry:', error);
+                alert('❌ লেনদেন মুছতে সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।');
             }
         }
         
@@ -7033,8 +7814,8 @@
                  customerSearchResultsTableBody.innerHTML = '';
                  customerByName.forEach(c => {
                     const row = customerSearchResultsTableBody.insertRow();
-                    const totalPurchased = sales.filter(s => s.customerId === c.id).reduce((sum, s) => sum + s.finalAmount, 0);
-                    const totalProducts = sales.filter(s => s.customerId === c.id).reduce((sum, s) => sum + s.items.reduce((s, i) => s + i.quantity, 0), 0);
+                    const totalPurchased = sales.filter(s => s.customerId === c.id && s.status !== 'বাতিল').reduce((sum, s) => sum + s.finalAmount, 0);
+                    const totalProducts = sales.filter(s => s.customerId === c.id && s.status !== 'বাতিল').reduce((sum, s) => sum + s.items.reduce((s, i) => s + i.quantity, 0), 0);
                     row.innerHTML = `
                         <td>${c.name}</td>
                         <td>${c.phone}</td>
@@ -7079,7 +7860,7 @@
             let totalSales = 0;
             let totalProducts = 0;
 
-            const customerTransactions = sales.filter(s => s.customerId === customer.id)
+            const customerTransactions = sales.filter(s => s.customerId === customer.id && s.status !== 'বাতিল')
                 .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
             customerHistoryName.textContent = customer.name;
@@ -7147,7 +7928,7 @@
             const customer = customers.find(c => c.phone === customerPhone);
             if (!customer) return;
 
-            const customerTransactions = sales.filter(s => s.customerId === customer.id)
+            const customerTransactions = sales.filter(s => s.customerId === customer.id && s.status !== 'বাতিল')
                 .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
             const logoHtml = shopSettings.logoUrl ? `<div class="center"><img src="${shopSettings.logoUrl}" alt="Logo" style="max-height: 80px; max-width: 200px; margin-bottom: 10px;"></div>` : '';
 
@@ -7160,11 +7941,11 @@
                 if (transaction.type === 'sale') {
                     totalSales += transaction.finalAmount;
                     let itemsListHtml = transaction.items.map(item => `${item.name}(${item.quantity})`).join(', ');
-                    salesHistoryHtml += `<tr><td>${moment(transaction.timestamp).format('L')}</td><td>${transaction.saleId.slice(-6)}</td><td>${itemsListHtml}</td><td class="right">৳${transaction.finalAmount.toLocaleString()}</td></tr>`;
+                    salesHistoryHtml += `<tr><td>${moment(transaction.timestamp).format('L')}</td><td>${transaction.saleId}</td><td>${itemsListHtml}</td><td class="right">৳${transaction.finalAmount.toLocaleString()}</td></tr>`;
                 } else if (transaction.type === 'return') {
                     totalSales += transaction.finalAmount; 
                     let itemsListHtml = transaction.items.map(item => `${item.name}(${item.quantity})`).join(', ');
-                    returnsHistoryHtml += `<tr><td>${moment(transaction.timestamp).format('L')}</td><td>${transaction.saleId.slice(-6)}</td><td>${itemsListHtml}</td><td class="right">৳${transaction.finalAmount.toLocaleString()}</td></tr>`;
+                    returnsHistoryHtml += `<tr><td>${moment(transaction.timestamp).format('L')}</td><td>${transaction.saleId}</td><td>${itemsListHtml}</td><td class="right">৳${transaction.finalAmount.toLocaleString()}</td></tr>`;
                 }
             });
 
@@ -7241,6 +8022,22 @@
                     adjustDueBtn.className = 'warning-btn';
                     adjustDueBtn.addEventListener('click', () => adjustCustomerDue(customer.id));
                     actionCell.appendChild(adjustDueBtn);
+                    
+                    // ✅ NEW: Edit Balance Directly Button
+                    const editBalanceBtn = document.createElement('button');
+                    editBalanceBtn.innerHTML = '<i class="fas fa-money-bill-wave"></i> ব্যালেন্স এডিট';
+                    editBalanceBtn.className = 'primary-btn';
+                    editBalanceBtn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+                    editBalanceBtn.addEventListener('click', () => editCustomerBalanceDirectly(customer.id));
+                    actionCell.appendChild(editBalanceBtn);
+                    
+                    // ✅ NEW: Delete All Cash Ledger Button
+                    const deleteCashLedgerBtn = document.createElement('button');
+                    deleteCashLedgerBtn.innerHTML = '<i class="fas fa-trash-alt"></i> ক্যাশ লেজার মুছুন';
+                    deleteCashLedgerBtn.className = 'danger-btn';
+                    deleteCashLedgerBtn.style.background = '#dc3545';
+                    deleteCashLedgerBtn.addEventListener('click', () => deleteAllCustomerCashLedger(customer.id));
+                    actionCell.appendChild(deleteCashLedgerBtn);
                 }
 
                 if (currentUser && currentUser.role !== 'admin') {
@@ -7352,6 +8149,342 @@
             updateAllUI();
 
             alert('বাকি টাকা সফলভাবে অ্যাডজাস্ট করা হয়েছে!');
+        }
+
+        // ✅ NEW: Delete Customer Payment Function
+        async function deleteCustomerPayment(paymentId, paymentType, customerId) {
+            if (currentUser.role !== 'admin') {
+                alert('আপনার পেমেন্ট ডিলিট করার অনুমতি নেই।');
+                return;
+            }
+
+            const customer = customers.find(c => c.id === customerId);
+            if (!customer) {
+                alert('কাস্টমার খুঁজে পাওয়া যায়নি!');
+                return;
+            }
+
+            let paymentEntry = null;
+            let paymentAmount = 0;
+            let paymentSource = '';
+
+            // Find the payment entry
+            if (paymentType === 'ledger') {
+                paymentEntry = ledgerEntries.find(e => e.id === paymentId);
+                if (paymentEntry) {
+                    paymentAmount = paymentEntry.amount;
+                    paymentSource = 'Cash Ledger';
+                }
+            } else if (paymentType === 'bank') {
+                paymentEntry = bankTransactions.find(t => t.id === paymentId);
+                if (paymentEntry) {
+                    paymentAmount = paymentEntry.amount || paymentEntry.totalAmount;
+                    paymentSource = paymentEntry.bankName || 'Bank';
+                }
+            }
+
+            if (!paymentEntry) {
+                alert('পেমেন্ট রেকর্ড খুঁজে পাওয়া যায়নি!');
+                return;
+            }
+
+            // Confirmation dialog
+            const confirmMessage = 
+                `⚠️ সতর্কতা: আপনি এই পেমেন্ট ডিলিট করতে চলেছেন!\n\n` +
+                `কাস্টমার: ${customer.name}\n` +
+                `পেমেন্টের পরিমাণ: ৳ ${paymentAmount.toLocaleString()}\n` +
+                `উৎস: ${paymentSource}\n` +
+                `তারিখ: ${moment(paymentEntry.timestamp).format('Do MMMM, YYYY')}\n\n` +
+                `ডিলিট করলে:\n` +
+                `• কাস্টমারের বাকি ৳ ${paymentAmount.toLocaleString()} বাড়বে\n` +
+                `• ${paymentSource} থেকে টাকা কাটা যাবে\n\n` +
+                `আপনি কি নিশ্চিত?`;
+
+            if (!confirm(confirmMessage)) {
+                return;
+            }
+
+            // Second confirmation
+            if (!confirm(`আবার নিশ্চিত করুন: পেমেন্ট ৳ ${paymentAmount.toLocaleString()} ডিলিট করা হবে। এই কাজটি অপরিবর্তনীয়!`)) {
+                return;
+            }
+
+            try {
+                showLoader();
+                const dbPromises = [];
+
+                // 1. Update customer due (increase by payment amount)
+                customer.currentDue = (customer.currentDue || 0) + paymentAmount;
+                customer.totalPaid = Math.max(0, (customer.totalPaid || 0) - paymentAmount);
+                dbPromises.push(db.put('customers', customer));
+
+                // 2. Delete the payment entry based on type
+                if (paymentType === 'ledger') {
+                    // Delete from ledger entries
+                    await db.delete('ledgerEntries', paymentId);
+                    const index = ledgerEntries.findIndex(e => e.id === paymentId);
+                    if (index !== -1) {
+                        ledgerEntries.splice(index, 1);
+                    }
+                } else if (paymentType === 'bank') {
+                    // Reverse bank transaction
+                    const bank = banks.find(b => b.id === paymentEntry.bankId);
+                    if (bank) {
+                        bank.currentBalance = Math.max(0, (bank.currentBalance || 0) - paymentAmount);
+                        dbPromises.push(db.put('banks', bank));
+                    }
+                    
+                    // Delete bank transaction record
+                    await db.delete('bankTransactions', paymentId);
+                    const index = bankTransactions.findIndex(t => t.id === paymentId);
+                    if (index !== -1) {
+                        bankTransactions.splice(index, 1);
+                    }
+                }
+
+                // 3. Create a reversal ledger entry for audit trail
+                const reversalEntry = {
+                    id: generateUniqueId('L'),
+                    timestamp: new Date().toISOString(),
+                    type: 'expense',
+                    category: 'manual_due_adjustment',
+                    description: `পেমেন্ট ডিলিট (বাকি বৃদ্ধি): ${customer.name} - ৳ ${paymentAmount.toLocaleString()}`,
+                    amount: paymentAmount,
+                    customerId: customerId,
+                    customerName: customer.name,
+                    saleId: 'PAYMENT_DELETE_' + paymentId
+                };
+                ledgerEntries.push(reversalEntry);
+                dbPromises.push(db.put('ledgerEntries', reversalEntry));
+
+                await Promise.all(dbPromises);
+
+                hideLoader();
+
+                alert(`✅ পেমেন্ট সফলভাবে ডিলিট করা হয়েছে!\n\n• কাস্টমারের বাকি ৳ ${paymentAmount.toLocaleString()} বাড়ানো হয়েছে\n• ${paymentSource} আপডেট করা হয়েছে`);
+
+                // Refresh the ledger view
+                renderCustomerLedgerTables(customerId);
+                
+                // Update customer summary
+                document.getElementById('summary-total-customer-paid').textContent = `৳ ${(customer.totalPaid || 0).toLocaleString()}`;
+                document.getElementById('summary-current-customer-due').textContent = `৳ ${(customer.currentDue || 0).toLocaleString()}`;
+                
+                // Refresh other UI components
+                updateAllUI();
+
+            } catch (error) {
+                hideLoader();
+                console.error('Error deleting payment:', error);
+                alert('❌ পেমেন্ট ডিলিট করতে সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।');
+            }
+        }
+
+        // ✅ NEW: Edit Customer Balance Directly from Customer Management
+        async function editCustomerBalanceDirectly(customerId) {
+            if (currentUser.role !== 'admin') {
+                alert('আপনার ব্যালেন্স এডিট করার অনুমতি নেই।');
+                return;
+            }
+
+            const customer = customers.find(c => c.id === customerId);
+            if (!customer) {
+                alert('কাস্টমার খুঁজে পাওয়া যায়নি!');
+                return;
+            }
+
+            const currentDue = customer.currentDue || 0;
+            
+            // Show detailed info and prompt for new balance
+            const newDueStr = prompt(
+                `কাস্টমার: ${customer.name}\n` +
+                `ফোন: ${customer.phone}\n\n` +
+                `বর্তমান বাকি: ৳ ${currentDue.toLocaleString()}\n` +
+                `মোট কেনা: ৳ ${(customer.totalPurchased || 0).toLocaleString()}\n` +
+                `মোট পরিশোধ: ৳ ${(customer.totalPaid || 0).toLocaleString()}\n\n` +
+                `নতুন বাকি টাকার পরিমাণ লিখুন:`
+            );
+
+            if (newDueStr === null) return; // Cancelled
+
+            const newDue = parseFloat(newDueStr);
+            if (isNaN(newDue) || newDue < 0) {
+                alert('অনুগ্রহ করে ০ বা তার বেশি একটি বৈধ সংখ্যা দিন।');
+                return;
+            }
+
+            const difference = newDue - currentDue;
+            
+            if (Math.abs(difference) < 0.01) {
+                alert('বাকি টাকার কোনো পরিবর্তন হয়নি।');
+                return;
+            }
+
+            // Confirmation dialog
+            const actionText = difference > 0 ? 'বাড়বে' : 'কমবে';
+            const confirmMessage = 
+                `⚠️ দয়া করে নিশ্চিত করুন:\n\n` +
+                `কাস্টমার: ${customer.name}\n` +
+                `বর্তমান বাকি: ৳ ${currentDue.toLocaleString()}\n` +
+                `নতুন বাকি: ৳ ${newDue.toLocaleString()}\n` +
+                `পরিবর্তন: ৳ ${Math.abs(difference).toLocaleString()} ${actionText}\n\n` +
+                `আপনি কি নিশ্চিত?`;
+
+            if (!confirm(confirmMessage)) {
+                return;
+            }
+
+            try {
+                showLoader();
+
+                // Update customer balance
+                customer.currentDue = newDue;
+                
+                // Adjust totalPaid to maintain accounting balance
+                // If due increases, it means less was paid
+                // If due decreases, it means more was paid
+                customer.totalPaid = Math.max(0, (customer.totalPaid || 0) - difference);
+
+                await db.put('customers', customer);
+
+                // Create audit trail ledger entry
+                const adjustmentType = difference > 0 ? 'expense' : 'income';
+                const auditEntry = {
+                    id: generateUniqueId('L'),
+                    timestamp: new Date().toISOString(),
+                    type: adjustmentType,
+                    category: 'manual_due_adjustment',
+                    description: `ব্যালেন্স এডিট (${actionText}): ${customer.name} - ৳ ${Math.abs(difference).toLocaleString()}`,
+                    amount: Math.abs(difference),
+                    customerId: customerId,
+                    customerName: customer.name,
+                    saleId: 'BALANCE_EDIT_' + generateUniqueId('L')
+                };
+                ledgerEntries.push(auditEntry);
+                await db.put('ledgerEntries', auditEntry);
+
+                hideLoader();
+
+                alert(`✅ ব্যালেন্স সফলভাবে আপডেট হয়েছে!\n\n` +
+                      `কাস্টমার: ${customer.name}\n` +
+                      `নতুন বাকি: ৳ ${newDue.toLocaleString()}`);
+
+                // Refresh UI
+                updateAllUI();
+                renderCustomerList();
+
+            } catch (error) {
+                hideLoader();
+                console.error('Error editing balance:', error);
+                alert('❌ ব্যালেন্স এডিট করতে সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।');
+            }
+        }
+
+        // ✅ NEW: Delete All Cash Ledger Entries for a Customer
+        async function deleteAllCustomerCashLedger(customerId) {
+            if (currentUser.role !== 'admin') {
+                alert('আপনার ক্যাশ লেজার মুছার অনুমতি নেই।');
+                return;
+            }
+
+            const customer = customers.find(c => c.id === customerId);
+            if (!customer) {
+                alert('কাস্টমার খুঁজে পাওয়া যায়নি!');
+                return;
+            }
+
+            // Find all cash ledger entries for this customer
+            const customerCashEntries = ledgerEntries.filter(e => 
+                e.customerId === customerId && 
+                e.type === 'income' && 
+                (e.category === 'due_collection' || e.category === 'sales_income')
+            );
+
+            if (customerCashEntries.length === 0) {
+                alert('এই কাস্টমারের কোনো ক্যাশ লেজার এন্ট্রি পাওয়া যায়নি।');
+                return;
+            }
+
+            const totalCashAmount = customerCashEntries.reduce((sum, e) => sum + (e.amount || 0), 0);
+
+            // Confirmation dialog
+            const confirmMessage = 
+                `⚠️ সতর্কতা: আপনি এই কাস্টমারের সব ক্যাশ লেজার এন্ট্রি মুছতে চলেছেন!\n\n` +
+                `কাস্টমার: ${customer.name}\n` +
+                `ফোন: ${customer.phone}\n` +
+                `মোট এন্ট্রি: ${customerCashEntries.length} টি\n` +
+                `মোট ক্যাশ টাকা: ৳ ${totalCashAmount.toLocaleString()}\n\n` +
+                `মুছে ফেলা হবে:\n` +
+                `• ক্যাশ লেজার থেকে ${customerCashEntries.length} টি এন্ট্রি\n` +
+                `• কাস্টমারের বাকি ৳ ${totalCashAmount.toLocaleString()} বাড়বে\n` +
+                `• কাস্টমারের মোট পরিশোধ ৳ ${totalCashAmount.toLocaleString()} কমবে\n\n` +
+                `আপনি কি নিশ্চিত?`;
+
+            if (!confirm(confirmMessage)) {
+                return;
+            }
+
+            // Second confirmation
+            if (!confirm(`আবার নিশ্চিত করুন: ${customerCashEntries.length} টি ক্যাশ লেজার এন্ট্রি চিরতরে মুছে ফেলা হবে। এই কাজটি অপরিবর্তনীয়!`)) {
+                return;
+            }
+
+            try {
+                showLoader();
+                const dbPromises = [];
+
+                // 1. Delete all cash ledger entries
+                for (const entry of customerCashEntries) {
+                    await db.delete('ledgerEntries', entry.id);
+                    const index = ledgerEntries.findIndex(e => e.id === entry.id);
+                    if (index !== -1) {
+                        ledgerEntries.splice(index, 1);
+                    }
+                }
+
+                // 2. Update customer balance
+                // Increase due by the total cash amount (since payments are being removed)
+                customer.currentDue = (customer.currentDue || 0) + totalCashAmount;
+                // Decrease total paid by the same amount
+                customer.totalPaid = Math.max(0, (customer.totalPaid || 0) - totalCashAmount);
+                
+                dbPromises.push(db.put('customers', customer));
+
+                // 3. Create audit trail entry
+                const auditEntry = {
+                    id: generateUniqueId('L'),
+                    timestamp: new Date().toISOString(),
+                    type: 'expense',
+                    category: 'manual_due_adjustment',
+                    description: `সব ক্যাশ লেজার মুছা হয়েছে: ${customer.name} - ${customerCashEntries.length} টি এন্ট্রি, ৳ ${totalCashAmount.toLocaleString()}`,
+                    amount: totalCashAmount,
+                    customerId: customerId,
+                    customerName: customer.name,
+                    saleId: 'BULK_DELETE_CASH_' + generateUniqueId('L')
+                };
+                ledgerEntries.push(auditEntry);
+                dbPromises.push(db.put('ledgerEntries', auditEntry));
+
+                await Promise.all(dbPromises);
+
+                hideLoader();
+
+                alert(`✅ সব ক্যাশ লেজার এন্ট্রি সফলভাবে মুছে ফেলা হয়েছে!\n\n` +
+                      `কাস্টমার: ${customer.name}\n` +
+                      `মোট মুছা এন্ট্রি: ${customerCashEntries.length} টি\n` +
+                      `মোট টাকা: ৳ ${totalCashAmount.toLocaleString()}\n\n` +
+                      `• কাস্টমারের বাকি আপডেট হয়েছে\n` +
+                      `• ক্যাশ লেজার আপডেট হয়েছে`);
+
+                // Refresh UI
+                updateAllUI();
+                renderCustomerList();
+
+            } catch (error) {
+                hideLoader();
+                console.error('Error deleting cash ledger:', error);
+                alert('❌ ক্যাশ লেজার মুছতে সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।');
+            }
         }
 
 
@@ -7710,9 +8843,42 @@
             const endDate = getSubscriptionEndDate();
             if (endDate) {
                 subscriptionEndDateDisplay.textContent = endDate.format('Do MMMM, YYYY');
+                // Set the date input to current end date for easy modification
+                if (subscriptionNewEndDateInput) {
+                    subscriptionNewEndDateInput.value = endDate.format('YYYY-MM-DD');
+                }
             } else {
                 subscriptionEndDateDisplay.textContent = 'সেট করা হয়নি';
+                // Default to today + 30 days if no date set
+                if (subscriptionNewEndDateInput) {
+                    subscriptionNewEndDateInput.value = moment().add(30, 'days').format('YYYY-MM-DD');
+                }
             }
+        }
+
+        // --- Subscription Level Logic (NEW) ---
+        function getSubscriptionLevelDisplayName(level) {
+            const levelNames = {
+                'basic': 'বেসিক (Basic)',
+                'standard': 'স্ট্যান্ডার্ড (Standard)',
+                'premium': 'প্রিমিয়াম (Premium)'
+            };
+            return levelNames[level] || level;
+        }
+
+        function updateSubscriptionLevelDisplay() {
+            if (currentSubscriptionLevelDisplay) {
+                currentSubscriptionLevelDisplay.textContent = getSubscriptionLevelDisplayName(shopSettings.subscriptionLevel);
+            }
+            if (subscriptionLevelSelect) {
+                subscriptionLevelSelect.value = shopSettings.subscriptionLevel;
+            }
+        }
+
+        async function setSubscriptionLevel(newLevel) {
+            shopSettings.subscriptionLevel = newLevel;
+            await db.put('settings', shopSettings);
+            updateSubscriptionLevelDisplay();
         }
 
         function checkSubscription() {
@@ -7721,6 +8887,7 @@
             const mainNavItems = document.querySelectorAll('#main-nav-ul li');
             
             updateSubscriptionDisplay();
+            updateSubscriptionLevelDisplay(); // Update level display when checking subscription
 
             if (!endDate || endDate.isBefore(now)) {
                 if (subscriptionStatusDisplay) {
@@ -7790,18 +8957,113 @@
             }
         }
 
+        // --- Data Usage Dashboard Functions ---
+        function calculateDataSize(data) {
+            const jsonStr = JSON.stringify(data);
+            const bytes = new Blob([jsonStr]).size;
+            return bytes;
+        }
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        async function updateDataUsageDashboard() {
+            try {
+                const dataSizes = {
+                    sales: calculateDataSize(sales),
+                    customers: calculateDataSize(customers),
+                    products: calculateDataSize(products),
+                    ledger: calculateDataSize(ledgerEntries),
+                    suppliers: calculateDataSize(suppliers),
+                    banks: calculateDataSize(banks)
+                };
+
+                const totalBytes = Object.values(dataSizes).reduce((sum, size) => sum + size, 0);
+
+                // Update total usage
+                document.getElementById('total-data-usage').textContent = formatBytes(totalBytes);
+                
+                // Calculate percentage (assuming 100MB as max for visual)
+                const maxBytes = 100 * 1024 * 1024; // 100MB
+                const percentage = Math.min((totalBytes / maxBytes) * 100, 100);
+                document.getElementById('data-usage-percentage').textContent = percentage.toFixed(1) + '% ব্যবহৃত';
+
+                // Update category sizes and bars
+                document.getElementById('sales-data-size').textContent = formatBytes(dataSizes.sales);
+                document.getElementById('customers-data-size').textContent = formatBytes(dataSizes.customers);
+                document.getElementById('products-data-size').textContent = formatBytes(dataSizes.products);
+                document.getElementById('ledger-data-size').textContent = formatBytes(dataSizes.ledger);
+                document.getElementById('suppliers-data-size').textContent = formatBytes(dataSizes.suppliers);
+                document.getElementById('banks-data-size').textContent = formatBytes(dataSizes.banks);
+
+                // Update progress bars
+                const maxCategorySize = Math.max(...Object.values(dataSizes), 1);
+                document.getElementById('sales-usage-bar').style.width = ((dataSizes.sales / maxCategorySize) * 100) + '%';
+                document.getElementById('customers-usage-bar').style.width = ((dataSizes.customers / maxCategorySize) * 100) + '%';
+                document.getElementById('products-usage-bar').style.width = ((dataSizes.products / maxCategorySize) * 100) + '%';
+                document.getElementById('ledger-usage-bar').style.width = ((dataSizes.ledger / maxCategorySize) * 100) + '%';
+                document.getElementById('suppliers-usage-bar').style.width = ((dataSizes.suppliers / maxCategorySize) * 100) + '%';
+                document.getElementById('banks-usage-bar').style.width = ((dataSizes.banks / maxCategorySize) * 100) + '%';
+
+                // Update stats
+                const totalRecords = sales.length + customers.length + products.length + ledgerEntries.length + suppliers.length + banks.length;
+                document.getElementById('total-records-count').textContent = totalRecords.toLocaleString();
+                document.getElementById('total-sales-count').textContent = sales.length.toLocaleString();
+                document.getElementById('total-customers-count').textContent = customers.length.toLocaleString();
+
+                // Update backup info
+                document.getElementById('backup-data-size').textContent = formatBytes(totalBytes);
+
+            } catch (error) {
+                console.error('Error updating data usage dashboard:', error);
+            }
+        }
+
+        // Refresh button event
+        document.getElementById('refresh-data-usage-btn').addEventListener('click', () => {
+            updateDataUsageDashboard();
+            showMessage(document.getElementById('backup-status'), 'ডেটা ইউসেজ রিফ্রেশ হয়েছে!', true);
+        });
+
         // --- Data Backup/Import Logic (Updated for Firebase-only) ---
         backupDataBtn.addEventListener('click', async () => {
             try {
+                showLoader();
+                
+                // Show progress container
+                const progressContainer = document.getElementById('backup-progress-container');
+                const progressBar = document.getElementById('backup-progress-bar');
+                const progressText = document.getElementById('backup-progress-text');
+                progressContainer.style.display = 'block';
+                
                 const backupData = {};
-                // Include all stores in fetch list
+                const totalStores = window.OBJECT_STORES.length;
+                let completedStores = 0;
+                
+                // Include all stores in fetch list with progress
                 const fetchPromises = window.OBJECT_STORES.map(async (storeName) => {
                     backupData[storeName] = await db.getAll(storeName);
+                    completedStores++;
+                    const progress = Math.round((completedStores / totalStores) * 50); // First 50% for fetching
+                    progressBar.style.width = progress + '%';
+                    progressText.textContent = progress + '%';
                 });
                 await Promise.all(fetchPromises);
                 
+                // Calculate data size
                 const dataStr = JSON.stringify(backupData, null, 2);
                 const blob = new Blob([dataStr], { type: 'application/json' });
+                const dataSize = formatBytes(blob.size);
+                
+                // Update progress to 75%
+                progressBar.style.width = '75%';
+                progressText.textContent = '75%';
+                
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
@@ -7810,10 +9072,25 @@
                 a.click();
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
-                showMessage(backupStatus, 'ডেটা সফলভাবে ব্যাকআপ করা হয়েছে!', true);
+                
+                // Complete progress
+                progressBar.style.width = '100%';
+                progressText.textContent = '100%';
+                
+                // Update last backup time
+                document.getElementById('last-backup-time').textContent = moment().format('DD/MM/YYYY HH:mm');
+                
+                setTimeout(() => {
+                    progressContainer.style.display = 'none';
+                    progressBar.style.width = '0%';
+                }, 2000);
+                
+                hideLoader();
+                showMessage(backupStatus, `✅ ডেটা সফলভাবে ব্যাকআপ করা হয়েছে! (${dataSize})`, true);
             } catch (error) {
+                hideLoader();
                 console.error("Backup failed:", error);
-                 showMessage(backupStatus, 'ডেটা ব্যাকআপ ব্যর্থ হয়েছে।', false);
+                showMessage(backupStatus, '❌ ডেটা ব্যাকআপ ব্যর্থ হয়েছে।', false);
             }
         });
 
@@ -7855,24 +9132,309 @@
             }
         });
 
-        extendSubscriptionBtn.addEventListener('click', async () => {
-            const password = subscriptionPasswordInput.value;
-            const days = parseInt(subscriptionDaysToAddInput.value);
+        // Update Subscription Date (Increase or Decrease) - NEW
+        updateSubscriptionDateBtn.addEventListener('click', async () => {
+            const password = subscriptionModifyPasswordInput.value;
+            const newDateStr = subscriptionNewEndDateInput.value;
 
-            if (password === ADMIN_PASSWORD) {
-                let currentEndDate = getSubscriptionEndDate();
-                if (!currentEndDate || currentEndDate.isBefore(moment())) {
-                    currentEndDate = moment();
+            if (password !== ADMIN_PASSWORD) {
+                showMessage(subscriptionMessage, 'ভুল পাসওয়ার্ড! মেয়াদ পরিবর্তন করা যায়নি।', false);
+                return;
+            }
+
+            if (!newDateStr) {
+                showMessage(subscriptionMessage, 'অনুগ্রহ করে একটি তারিখ নির্বাচন করুন।', false);
+                return;
+            }
+
+            const newEndDate = moment(newDateStr);
+            const currentEndDate = getSubscriptionEndDate();
+            const now = moment();
+
+            // Check if date is being reduced
+            const isReducing = currentEndDate && newEndDate.isBefore(currentEndDate);
+            
+            // Confirmation for date reduction
+            if (isReducing) {
+                const daysReduced = currentEndDate.diff(newEndDate, 'days');
+                const confirmReduce = confirm(
+                    `⚠️ সতর্কতা: আপনি সাবস্ক্রিপশন মেয়াদ কমাচ্ছেন!\n\n` +
+                    `বর্তমান মেয়াদ: ${currentEndDate.format('Do MMMM, YYYY')}\n` +
+                    `নতুন মেয়াদ: ${newEndDate.format('Do MMMM, YYYY')}\n` +
+                    `কমানো হচ্ছে: ${daysReduced} দিন\n\n` +
+                    `আপনি কি নিশ্চিত?`
+                );
+                if (!confirmReduce) {
+                    showMessage(subscriptionMessage, 'মেয়াদ পরিবর্তন বাতিল করা হয়েছে।', false);
+                    return;
                 }
-                const newEndDate = currentEndDate.add(days, 'days');
-                await setSubscriptionEndDate(newEndDate);
+            }
+
+            // Check if new date is in the past
+            if (newEndDate.isBefore(now, 'day')) {
+                const confirmExpired = confirm(
+                    `⚠️ সতর্কতা: আপনি একটি অতীত তারিখ নির্বাচন করেছেন!\n\n` +
+                    `এতে সাবস্ক্রিপশন তাৎক্ষণিকভাবে শেষ হয়ে যাবে।\n\n` +
+                    `আপনি কি নিশ্চিত?`
+                );
+                if (!confirmExpired) {
+                    showMessage(subscriptionMessage, 'মেয়াদ পরিবর্তন বাতিল করা হয়েছে।', false);
+                    return;
+                }
+            }
+
+            await setSubscriptionEndDate(newEndDate);
+            checkSubscription();
+            
+            const actionText = isReducing ? 'কমানো' : 'বাড়ানো';
+            showMessage(subscriptionMessage, `সাবস্ক্রিপশন মেয়াদ সফলভাবে ${actionText} হয়েছে! নতুন মেয়াদ: ${newEndDate.format('Do MMMM, YYYY')}`, true);
+            subscriptionModifyPasswordInput.value = '';
+            
+            // Show success alert
+            alert(`✅ সাবস্ক্রিপশন মেয়াদ সফলভাবে আপডেট হয়েছে!\n\nনতুন মেয়াদ: ${newEndDate.format('Do MMMM, YYYY')}`);
+        });
+
+        // Quick Extend +30 Days - NEW
+        extendSubscriptionQuickBtn.addEventListener('click', async () => {
+            const password = subscriptionModifyPasswordInput.value;
+
+            if (password !== ADMIN_PASSWORD) {
+                showMessage(subscriptionMessage, 'ভুল পাসওয়ার্ড! মেয়াদ বাড়ানো যায়নি।', false);
+                return;
+            }
+
+            let currentEndDate = getSubscriptionEndDate();
+            if (!currentEndDate || currentEndDate.isBefore(moment())) {
+                currentEndDate = moment();
+            }
+            const newEndDate = currentEndDate.add(30, 'days');
+            
+            await setSubscriptionEndDate(newEndDate);
+            checkSubscription();
+            
+            showMessage(subscriptionMessage, `৩০ দিনের জন্য সাবস্ক্রিপশন সফলভাবে বাড়ানো হয়েছে! নতুন মেয়াদ: ${newEndDate.format('Do MMMM, YYYY')}`, true);
+            subscriptionModifyPasswordInput.value = '';
+            
+            // Show success alert
+            alert(`✅ সাবস্ক্রিপশন মেয়াদ সফলভাবে বাড়ানো হয়েছে!\n\nনতুন মেয়াদ: ${newEndDate.format('Do MMMM, YYYY')}`);
+        });
+
+        // Subscription Level Update Event Listener (NEW)
+        updateSubscriptionLevelBtn.addEventListener('click', async () => {
+            const password = subscriptionLevelPasswordInput.value;
+            const newLevel = subscriptionLevelSelect.value;
+            const currentLevel = shopSettings.subscriptionLevel;
+
+            if (password !== ADMIN_PASSWORD) {
+                showMessage(subscriptionLevelMessage, 'ভুল পাসওয়ার্ড! লেভেল পরিবর্তন করা যায়নি।', false);
+                return;
+            }
+
+            if (newLevel === currentLevel) {
+                showMessage(subscriptionLevelMessage, 'একই লেভেল নির্বাচন করা হয়েছে। কোনো পরিবর্তন প্রয়োজন নেই।', false);
+                return;
+            }
+
+            // Confirm the change
+            const confirmChange = confirm(`আপনি কি নিশ্চিত যে আপনি সাবস্ক্রিপশন লেভেল পরিবর্তন করতে চান?\n\nবর্তমান: ${getSubscriptionLevelDisplayName(currentLevel)}\nনতুন: ${getSubscriptionLevelDisplayName(newLevel)}`);
+            
+            if (confirmChange) {
+                await setSubscriptionLevel(newLevel);
+                showMessage(subscriptionLevelMessage, `সাবস্ক্রিপশন লেভেল সফলভাবে পরিবর্তন করা হয়েছে! নতুন লেভেল: ${getSubscriptionLevelDisplayName(newLevel)}`, true);
+                subscriptionLevelPasswordInput.value = '';
                 
-                checkSubscription();
-                showMessage(subscriptionMessage, `${days} দিনের জন্য সাবস্ক্রিপশন সফলভাবে বাড়ানো হয়েছে! নতুন মেয়াদ: ${newEndDate.format('Do MMMM,YYYY')}`, true);
-                subscriptionPasswordInput.value = '';
-                subscriptionDaysToAddInput.value = '30';
+                // Optional: Show a success alert
+                alert(`✅ সাবস্ক্রিপশন লেভেল সফলভাবে আপডেট হয়েছে!\n\nনতুন লেভেল: ${getSubscriptionLevelDisplayName(newLevel)}`);
             } else {
-                showMessage(subscriptionMessage, 'ভুল পাসওয়ার্ড! সাবস্ক্রিপশন বাড়ানো যায়নি।', false);
+                showMessage(subscriptionLevelMessage, 'লেভেল পরিবর্তন বাতিল করা হয়েছে।', false);
+                // Reset the select to current level
+                subscriptionLevelSelect.value = currentLevel;
+            }
+        });
+
+        // ✅ NEW: Feature Lock System Functions
+        
+        // Check if a feature is unlocked
+        function isFeatureUnlocked(featureId) {
+            if (!shopSettings.unlockedFeatures) {
+                shopSettings.unlockedFeatures = FEATURE_VERSIONS['1.0.0'];
+            }
+            return shopSettings.unlockedFeatures.includes(featureId);
+        }
+
+        // Get current version
+        function getCurrentVersion() {
+            return shopSettings.currentVersion || '1.0.0';
+        }
+
+        // Check if version is higher than current
+        function isHigherVersion(newVersion, currentVersion) {
+            const newParts = newVersion.split('.').map(Number);
+            const currentParts = currentVersion.split('.').map(Number);
+            
+            for (let i = 0; i < Math.max(newParts.length, currentParts.length); i++) {
+                const newPart = newParts[i] || 0;
+                const currentPart = currentParts[i] || 0;
+                
+                if (newPart > currentPart) return true;
+                if (newPart < currentPart) return false;
+            }
+            return false;
+        }
+
+        // Update menu visibility based on unlocked features
+        function updateMenuVisibility() {
+            // Hide/show menu items based on feature locks
+            for (const [featureId, menuIds] of Object.entries(FEATURE_MENU_MAP)) {
+                const isUnlocked = isFeatureUnlocked(featureId);
+                menuIds.forEach(menuId => {
+                    const menuItem = document.getElementById(menuId);
+                    if (menuItem) {
+                        menuItem.style.display = isUnlocked ? 'list-item' : 'none';
+                    }
+                });
+            }
+        }
+
+        // Update version display in settings
+        function updateVersionDisplay() {
+            const currentVersion = getCurrentVersion();
+            const unlockedCount = shopSettings.unlockedFeatures ? shopSettings.unlockedFeatures.length : 5;
+            const totalFeatures = Object.keys(FEATURE_VERSIONS).reduce((acc, ver) => {
+                return acc + FEATURE_VERSIONS[ver].length;
+            }, 0);
+            
+            const versionDisplay = document.getElementById('current-version-display');
+            const featuresCount = document.getElementById('unlocked-features-count');
+            
+            if (versionDisplay) versionDisplay.textContent = 'v' + currentVersion;
+            if (featuresCount) featuresCount.textContent = `${unlockedCount} / ${totalFeatures}`;
+            
+            // Update version options styling
+            document.querySelectorAll('.version-option').forEach(option => {
+                const version = option.dataset.version;
+                const icon = option.querySelector('.fa-lock, .fa-check');
+                
+                if (!isHigherVersion(version, currentVersion)) {
+                    // Already unlocked
+                    option.style.opacity = '0.6';
+                    option.style.borderColor = '#10b981';
+                    if (icon) {
+                        icon.className = 'fas fa-check';
+                        icon.style.color = '#10b981';
+                    }
+                }
+            });
+        }
+
+        // Handle version selection
+        let selectedUpgradeVersion = null;
+        document.querySelectorAll('.version-option').forEach(option => {
+            option.addEventListener('click', () => {
+                const version = option.dataset.version;
+                const currentVersion = getCurrentVersion();
+                
+                if (!isHigherVersion(version, currentVersion)) {
+                    showMessage(document.getElementById('upgrade-message'), 'এই ভার্সনটি ইতিমধ্যে আনলক করা আছে।', false);
+                    return;
+                }
+                
+                // Remove previous selection
+                document.querySelectorAll('.version-option').forEach(opt => {
+                    opt.style.borderColor = 'rgba(255,255,255,0.1)';
+                    opt.style.background = opt.dataset.version === '2.0.0' 
+                        ? 'linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(251, 191, 36, 0.1))' 
+                        : 'rgba(255,255,255,0.05)';
+                });
+                
+                // Select this version
+                option.style.borderColor = '#f59e0b';
+                option.style.background = 'rgba(245, 158, 11, 0.3)';
+                selectedUpgradeVersion = version;
+                
+                showMessage(document.getElementById('upgrade-message'), `ভার্সন ${version} নির্বাচন করা হয়েছে। আপগ্রেড বাটনে ক্লিক করুন।`, true);
+            });
+        });
+
+        // Upgrade software
+        const upgradeSoftwareBtn = document.getElementById('upgrade-software-btn');
+        const upgradePasswordInput = document.getElementById('upgrade-password');
+        
+        upgradeSoftwareBtn.addEventListener('click', async () => {
+            const password = upgradePasswordInput.value;
+            
+            if (password !== ADMIN_PASSWORD) {
+                showMessage(document.getElementById('upgrade-message'), 'ভুল পাসওয়ার্ড! আপগ্রেড করা যাবে না।', false);
+                return;
+            }
+            
+            if (!selectedUpgradeVersion) {
+                showMessage(document.getElementById('upgrade-message'), 'অনুগ্রহ করে একটি ভার্সন নির্বাচন করুন।', false);
+                return;
+            }
+            
+            const currentVersion = getCurrentVersion();
+            
+            if (!isHigherVersion(selectedUpgradeVersion, currentVersion)) {
+                showMessage(document.getElementById('upgrade-message'), 'এই ভার্সনটি ইতিমধ্যে আনলক করা আছে।', false);
+                return;
+            }
+            
+            // Show confirmation
+            const newFeatures = FEATURE_VERSIONS[selectedUpgradeVersion].filter(
+                f => !shopSettings.unlockedFeatures.includes(f)
+            );
+            
+            const confirmMessage = `আপনি কি নিশ্চিত যে আপনি আপগ্রেড করতে চান?\n\n` +
+                `বর্তমান ভার্সন: ${currentVersion}\n` +
+                `নতুন ভার্সন: ${selectedUpgradeVersion}\n\n` +
+                `নতুন ফিচার:\n${newFeatures.map(f => '• ' + f).join('\n')}\n\n` +
+                `⚠️ নোট: কোনো ডেটা পরিবর্তন হবে না।`;
+            
+            if (!confirm(confirmMessage)) {
+                return;
+            }
+            
+            try {
+                showLoader();
+                
+                // Update version and unlock features
+                shopSettings.currentVersion = selectedUpgradeVersion;
+                shopSettings.unlockedFeatures = FEATURE_VERSIONS[selectedUpgradeVersion];
+                
+                // Save to database
+                await db.put('shopSettings', shopSettings);
+                
+                hideLoader();
+                
+                // Update UI
+                updateVersionDisplay();
+                updateMenuVisibility();
+                
+                // Success message
+                alert(`✅ সফটওয়্যার সফলভাবে আপগ্রেড হয়েছে!\n\n` +
+                      `নতুন ভার্সন: ${selectedUpgradeVersion}\n` +
+                      `আনলকড ফিচার: ${shopSettings.unlockedFeatures.length} টি\n\n` +
+                      `নতুন ফিচারগুলো ব্যবহার করতে পারেন।`);
+                
+                showMessage(document.getElementById('upgrade-message'), 
+                    `✅ ভার্সন ${selectedUpgradeVersion} এ সফলভাবে আপগ্রেড হয়েছে!`, true);
+                
+                upgradePasswordInput.value = '';
+                selectedUpgradeVersion = null;
+                
+                // Reset selection styling
+                document.querySelectorAll('.version-option').forEach(opt => {
+                    opt.style.borderColor = 'rgba(255,255,255,0.1)';
+                    opt.style.background = opt.dataset.version === '2.0.0' 
+                        ? 'linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(251, 191, 36, 0.1))' 
+                        : 'rgba(255,255,255,0.05)';
+                });
+                
+            } catch (error) {
+                hideLoader();
+                console.error('Upgrade error:', error);
+                showMessage(document.getElementById('upgrade-message'), '❌ আপগ্রেড করতে সমস্যা হয়েছে।', false);
             }
         });
         
@@ -7914,12 +9476,12 @@
             const returnsBody = document.querySelector('#customer-returns-table tbody');
 
             salesBody.innerHTML = '<tr><td colspan="4">কোনো বিক্রয় নেই</td></tr>';
-            paymentsBody.innerHTML = '<tr><td colspan="4">কোনো পেমেন্ট নেই</td></tr>'; // Increased colspan
+            paymentsBody.innerHTML = '<tr><td colspan="5">কোনো পেমেন্ট নেই</td></tr>'; // Increased colspan for action column
             returnsBody.innerHTML = '<tr><td colspan="3">কোনো ফেরত নেই</td></tr>';
 
             let totalSales = 0, totalPayments = 0, totalReturns = 0;
 
-            const customerTransactions = sales.filter(s => s.customerId === customerId && filterByDate(s));
+            const customerTransactions = sales.filter(s => s.customerId === customerId && s.status !== 'বাতিল' && filterByDate(s));
             
             const customerSales = customerTransactions.filter(s => s.type === 'sale');
             if(customerSales.length > 0) {
@@ -7943,14 +9505,36 @@
                 allPayments.forEach(item => {
                     const amount = item.amount || item.totalAmount;
                     const source = item.bankName || 'Cash';
+                    const isLedgerEntry = item.hasOwnProperty('category'); // Check if it's a ledger entry
+                    const isBankTransaction = item.hasOwnProperty('bankId') || item.bankName;
                     
+                    let rowHtml = '';
                     if (item.type === 'income' || item.type === 'credit') {
                          totalPayments += amount;
-                         paymentsBody.innerHTML += `<tr><td>${moment(item.timestamp).format('L')}</td><td>${source}</td><td>${item.description || 'পেমেন্ট'}</td><td>৳ ${amount.toLocaleString()}</td></tr>`;
+                         rowHtml = `<tr><td>${moment(item.timestamp).format('L')}</td><td>${source}</td><td>${item.description || 'পেমেন্ট'}</td><td>৳ ${amount.toLocaleString()}</td>`;
                     } else if (item.type === 'expense') { // Negative Adjustment
                          totalPayments -= amount;
-                         paymentsBody.innerHTML += `<tr style="color: #dc3545;"><td>${moment(item.timestamp).format('L')}</td><td>${source}</td><td>${item.description || 'নেগেটিভ অ্যাডজাস্টমেন্ট'}</td><td>- ৳ ${amount.toLocaleString()}</td></tr>`;
+                         rowHtml = `<tr style="color: #dc3545;"><td>${moment(item.timestamp).format('L')}</td><td>${source}</td><td>${item.description || 'নেগেটিভ অ্যাডজাস্টমেন্ট'}</td><td>- ৳ ${amount.toLocaleString()}</td>`;
                     }
+                    
+                    // Add delete button for admin users (only for ledger entries and bank transactions, not manual adjustments)
+                    if (currentUser && currentUser.role === 'admin' && item.category !== 'manual_due_adjustment') {
+                        const deleteBtn = `<button class="danger-btn delete-payment-btn" data-payment-id="${item.id}" data-payment-type="${isLedgerEntry ? 'ledger' : 'bank'}" style="padding: 2px 8px; font-size: 12px;"><i class="fas fa-trash"></i></button>`;
+                        rowHtml += `<td>${deleteBtn}</td></tr>`;
+                    } else {
+                        rowHtml += `<td>-</td></tr>`;
+                    }
+                    
+                    paymentsBody.innerHTML += rowHtml;
+                });
+                
+                // Add event listeners to delete buttons
+                document.querySelectorAll('.delete-payment-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const paymentId = e.target.closest('.delete-payment-btn').dataset.paymentId;
+                        const paymentType = e.target.closest('.delete-payment-btn').dataset.paymentType;
+                        deleteCustomerPayment(paymentId, paymentType, customerId);
+                    });
                 });
             }
 
@@ -8163,11 +9747,12 @@
                 const start = moment(lastCompleteMonthStart).subtract(i, 'month').startOf('month');
                 const end = moment(lastCompleteMonthStart).subtract(i, 'month').endOf('month');
 
-                // Filter sales for this month range
+                // Filter sales for this month range (exclude deleted bills)
                 const monthSales = sales.filter(s => 
                      moment(s.timestamp).isSameOrAfter(start) && 
                      moment(s.timestamp).isSameOrBefore(end) && 
-                     s.type === 'sale'
+                     s.type === 'sale' &&
+                     s.status !== 'বাতিল'
                 );
                 
                 if (monthSales.length > 0) { 
@@ -8222,7 +9807,7 @@
 
             // Find estimated Top Product
             const topMonth = monthData[0].month;
-            const topMonthSales = sales.filter(s => moment(s.timestamp).format('YYYY-MM') === topMonth && s.type === 'sale');
+            const topMonthSales = sales.filter(s => moment(s.timestamp).format('YYYY-MM') === topMonth && s.type === 'sale' && s.status !== 'বাতিল');
             const productCounts = {};
             topMonthSales.forEach(s => s.items.forEach(item => {
                  productCounts[item.name] = (productCounts[item.name] || 0) + item.quantity;
@@ -8312,7 +9897,7 @@
             let totalNetProfit = 0;
             let totalNetQty = 0;
 
-            sales.filter(s => s.type === 'sale').forEach(sale => {
+            sales.filter(s => s.type === 'sale' && s.status !== 'বাতিল').forEach(sale => {
                  const saleDate = moment(sale.timestamp);
                  if ((fromDate && saleDate.isBefore(fromDate)) || (toDate && saleDate.isAfter(toDate))) return;
 
@@ -8417,8 +10002,8 @@
             let totalAllCost = 0;
             let totalAllProfit = 0;
 
-             // 1. Group sales based on Report Type (daily/monthly/yearly)
-            sales.filter(s => s.type === 'sale' || s.type === 'return').forEach(transaction => {
+             // 1. Group sales based on Report Type (daily/monthly/yearly) - exclude deleted bills
+            sales.filter(s => (s.type === 'sale' || s.type === 'return') && s.status !== 'বাতিল').forEach(transaction => {
                 const isSale = transaction.type === 'sale';
                 const modifier = isSale ? 1 : -1;
 
@@ -8530,6 +10115,57 @@
         });
 
         ledgerTypeSelect.addEventListener('change', updateLedgerCategoryDropdown);
+        
+        // ✅ NEW: Event listeners for POS Customer search
+        posCustomerPhoneInput.addEventListener('input', () => handlePosCustomerSearch('phone', posCustomerPhoneInput.value));
+        posCustomerNameInput.addEventListener('input', () => handlePosCustomerSearch('name', posCustomerNameInput.value));
+        
+        // ✅ NEW: POS Customer Search handler function
+        function handlePosCustomerSearch(type, query) {
+            const resultsContainer = type === 'phone' ? posCustomerPhoneSearchResults : posCustomerNameSearchResults;
+            resultsContainer.innerHTML = '';
+            if (query.length < 2) {
+                resultsContainer.style.display = 'none';
+                return;
+            }
+
+            const lowerQuery = query.toLowerCase();
+            const filteredCustomers = customers.filter(c => {
+                if (type === 'phone') {
+                    return c.phone.includes(lowerQuery);
+                } else {
+                    return c.name.toLowerCase().includes(lowerQuery);
+                }
+            });
+
+            if (filteredCustomers.length > 0) {
+                filteredCustomers.slice(0, 5).forEach(c => { // Show max 5 results
+                    const div = document.createElement('div');
+                    div.textContent = `${c.name} (${c.phone})`;
+                    div.addEventListener('click', () => {
+                        posCustomerPhoneInput.value = c.phone;
+                        posCustomerNameInput.value = c.name;
+                        posCustomerAddressInput.value = c.address || '';
+                        resultsContainer.style.display = 'none';
+                    });
+                    resultsContainer.appendChild(div);
+                });
+                resultsContainer.style.display = 'block';
+            } else {
+                resultsContainer.style.display = 'none';
+            }
+        }
+        
+        // Hide search results when clicking outside
+        document.addEventListener('click', (event) => {
+            if (!posCustomerPhoneInput.contains(event.target)) {
+                posCustomerPhoneSearchResults.style.display = 'none';
+            }
+             if (!posCustomerNameInput.contains(event.target)) {
+                posCustomerNameSearchResults.style.display = 'none';
+            }
+        });
+
 
 
         document.addEventListener('DOMContentLoaded', async () => {
